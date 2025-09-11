@@ -22,11 +22,11 @@ func mainPage(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		memStorage := MemStorage{gauge: make(map[string]float64), counter: make(map[string]int64)}
 		pathSplit := strings.Split(r.URL.Path, "/")
-		if float, err := strconv.ParseFloat(pathSplit[4], 64); pathSplit[2] == gauge && err == nil && float != 0 {
+		if float, err := strconv.ParseFloat(pathSplit[4], 64); pathSplit[2] == gauge && err == nil && float != 0 && pathSplit[3] != "" {
 			memStorage.gauge[pathSplit[3]] = float
 			w.WriteHeader(http.StatusOK)
 			return
-		} else if count, err := strconv.Atoi(pathSplit[4]); pathSplit[2] == counter && err == nil && count != 0 {
+		} else if count, err := strconv.Atoi(pathSplit[4]); pathSplit[2] == counter && err == nil && count != 0 && pathSplit[3] != "" {
 			_, ok := memStorage.counter[pathSplit[3]]
 			if ok {
 				memStorage.counter[pathSplit[3]] += int64(count)
