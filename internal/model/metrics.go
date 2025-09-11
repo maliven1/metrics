@@ -5,6 +5,18 @@ const (
 	Gauge   = "gauge"
 )
 
+const (
+	StatusBadRequest = 400
+	StatusOK         = 200
+	StatusNotFound   = 404
+	StatusCreated    = 201
+)
+
+type MemStorage struct {
+	Gauge   map[string]float64
+	Counter map[string]int64
+}
+
 // NOTE: Не усложняем пример, вводя иерархическую вложенность структур.
 // Органичиваясь плоской моделью.
 // Delta и Value объявлены через указатели,
