@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"strings"
 
-	models "github.com/maliven1/metrics/internal/model"
+	"github.com/maliven1/metrics/internal/repository"
 	"github.com/maliven1/metrics/internal/service"
 )
 
-func PostHandler(memStorage models.MemStorage) http.HandlerFunc {
+func PostHandler(memStorage *repository.MemStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 
