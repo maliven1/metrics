@@ -1,52 +1,41 @@
 package repository
 
-import (
-	"github.com/maliven1/metrics/internal/config"
-	models "github.com/maliven1/metrics/internal/model"
-)
-
+type Cache interface {
+	SetGauge(key string, value float64)
+	SetCounter(key string, value int64)
+	GetGauge() map[string]float64
+	GetCounter() map[string]int64
+	CheckCounter(key string) bool
+	AddCounter(key string, value int64)
+}
 type MemStorage struct {
-	memCache *models.MemStorage
+	cache Cache
 }
 
-type Storage interface {
-	MemStorage
-}
-
-func InitCache() *MemStorage {
-	memStorage := config.InitMemStorage()
-
-	return &MemStorage{
-		memCache: &memStorage,
-	}
+func NewCache(cache Cache) *MemStorage {
+	return &MemStorage{cache: cache}
 }
 
 func (c *MemStorage) SetGauge(key string, value float64) {
-	c.memCache.Gauge[key] = value
-
+	c.cache.SetGauge(key, value)
 }
 
 func (c *MemStorage) SetCounter(key string, value int64) {
-	c.memCache.Counter[key] = value
+	c.cache.SetCounter(key, value)
 
 }
 
 func (c *MemStorage) GetGauge() map[string]float64 {
-	return c.memCache.Gauge
+	return c.cache.GetGauge()
 }
 func (c *MemStorage) GetCounter() map[string]int64 {
-	return c.memCache.Counter
+	return c.cache.GetCounter()
 }
 func (c *MemStorage) CheckCounter(key string) bool {
-	_, ok := c.memCache.Counter[key]
-	if ok {
-		return ok
-	}
 
-	return ok
+	return c.cache.CheckCounter(key)
 }
 
 func (c *MemStorage) AddCounter(key string, value int64) {
-	c.memCache.Counter[key] = +value
-
+	c.cache.AddCounter(key, value)
 }

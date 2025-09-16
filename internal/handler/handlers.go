@@ -3,18 +3,26 @@ package handler
 import (
 	"net/http"
 	"strings"
-
-	"github.com/maliven1/metrics/internal/repository"
-	"github.com/maliven1/metrics/internal/service"
 )
 
-func PostHandler(memStorage *repository.MemStorage) http.HandlerFunc {
+type Service interface {
+	CheckPath(pathSplit []string) int
+}
+
+type AddHandler struct {
+	AddHandler Service
+}
+
+func NewAddHandler(s Service) *AddHandler {
+	return &AddHandler{AddHandler: s}
+}
+
+func (h AddHandler) PostHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
-
 		if r.Method == http.MethodPost {
 			pathSplit := strings.Split(r.URL.Path, "/")
-			status := service.CheckPath(pathSplit, memStorage)
+			status := h.AddHandler.CheckPath(pathSplit)
 			w.WriteHeader(status)
 		} else {
 
