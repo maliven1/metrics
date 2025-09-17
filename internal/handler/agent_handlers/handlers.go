@@ -23,15 +23,12 @@ func NewSendClient(s Agent) *SendClient {
 }
 
 func (s SendClient) SendClientMetrics() {
-	fmt.Println("Start")
 	endpoint := "http://localhost:8080/update/"
 	client := &http.Client{}
 	go s.AddHandler.CollectMetrics()
 	for {
-
 		time.Sleep(time.Duration(models.ReportInterval) * time.Second)
 		Gauge, Counter := s.AddHandler.GetMetrics()
-		fmt.Println("Start2")
 		for i, v := range Gauge {
 			if i == "" {
 				continue
