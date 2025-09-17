@@ -54,7 +54,7 @@ func (s SendClient) SendClientMetrics() {
 			}
 			fmt.Println(request)
 			fmt.Println("Статус-код ", response.Status, i, v)
-			defer response.Body.Close()
+			response.Body.Close()
 		}
 		for i, v := range Counter {
 			if i == "" {
@@ -81,9 +81,8 @@ func (s SendClient) SendClientMetrics() {
 			}
 			fmt.Println(request)
 			fmt.Println("Статус-код ", response.Status, i, v)
-			defer response.Body.Close()
+			response.Body.Close()
 		}
-
 		// выводим код ответа
 
 		// читаем поток из тела ответа
