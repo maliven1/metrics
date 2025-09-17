@@ -1,4 +1,4 @@
-package agent_Handlers
+package agent_handlers
 
 import (
 	"fmt"
@@ -37,10 +37,8 @@ func (s SendClient) SendClientMetrics() {
 				continue
 			}
 			// контейнер данных для запроса
-			data, err := url.JoinPath(models.Gauge, i, fmt.Sprint(v))
-			if err != nil {
-				fmt.Errorf("BadRequest")
-			}
+			data, _ := url.JoinPath(models.Gauge, i, fmt.Sprint(v))
+
 			// добавляем HTTP-клиент
 
 			// пишем запрос

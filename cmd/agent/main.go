@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/maliven1/metrics/internal/agent"
-	agent_Handlers "github.com/maliven1/metrics/internal/handler/agent_handlers"
+	"github.com/maliven1/metrics/internal/handler/agent_handlers"
 	"github.com/maliven1/metrics/internal/repository"
 	"github.com/maliven1/metrics/internal/storage"
 )
@@ -12,7 +12,7 @@ func main() {
 	memStorage := storage.NewMemStorage()
 	cache := repository.NewCache(memStorage)
 	service := agent.NewAgent(cache)
-	client := agent_Handlers.NewSendClient(service)
+	client := agent_handlers.NewSendClient(service)
 	client.SendClientMetrics()
 
 }
