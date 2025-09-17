@@ -1,4 +1,4 @@
-package agent_handlers
+package agentHandlers
 
 import (
 	"fmt"
@@ -57,7 +57,7 @@ func (s SendClient) SendClientMetrics() {
 			}
 			fmt.Println(request)
 			fmt.Println("Статус-код ", response.Status, i, v)
-			// defer response.Body.Close()
+			defer response.Body.Close()
 		}
 		for i, v := range Counter {
 			if i == "" {
@@ -84,7 +84,7 @@ func (s SendClient) SendClientMetrics() {
 			}
 			fmt.Println(request)
 			fmt.Println("Статус-код ", response.Status, i, v)
-			// defer response.Body.Close()
+			defer response.Body.Close()
 		}
 
 		// выводим код ответа
