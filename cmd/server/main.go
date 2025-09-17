@@ -4,18 +4,17 @@ import (
 	"log"
 	"net/http"
 
-	serverHandlers "github.com/maliven1/metrics/internal/handler/server_handlers"
+	serverhandlers "github.com/maliven1/metrics/internal/handler/server_handlers"
 	"github.com/maliven1/metrics/internal/repository"
 	"github.com/maliven1/metrics/internal/service"
 	"github.com/maliven1/metrics/internal/storage"
 )
 
 func main() {
-
 	memStorage := storage.NewMemStorage()
 	cache := repository.NewCache(memStorage)
 	service := service.NewService(cache)
-	h := serverHandlers.NewAddHandler(service)
+	h := serverhandlers.NewAddHandler(service)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc(`/update/`, h.PostHandler())
