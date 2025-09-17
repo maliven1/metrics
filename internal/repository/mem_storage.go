@@ -28,9 +28,11 @@ func (c *MemStorage) SetCounter(key string, value int64) {
 func (c *MemStorage) GetGauge() map[string]float64 {
 	return c.cache.GetGauge()
 }
+
 func (c *MemStorage) GetCounter() map[string]int64 {
 	return c.cache.GetCounter()
 }
+
 func (c *MemStorage) CheckCounter(key string) bool {
 
 	return c.cache.CheckCounter(key)
