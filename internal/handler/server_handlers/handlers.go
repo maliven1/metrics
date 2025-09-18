@@ -1,12 +1,18 @@
 package serverhandlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
+
+	"github.com/go-chi/render"
+	models "github.com/maliven1/metrics/internal/model"
 )
 
 type Service interface {
-	CheckPath(pathSplit []string) int
+	CheckAddPath(pathSplit []string) int
+	GetMetric(pathSplit []string) (string, int)
+	GetAllMetrics() (map[string]int64, map[string]float64)
 }
 
 type AddHandler struct {
@@ -19,15 +25,51 @@ func NewAddHandler(s Service) *AddHandler {
 
 func (h AddHandler) PostHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain")
-		if r.Method == http.MethodPost {
-			pathSplit := strings.Split(r.URL.Path, "/")
-			status := h.AddHandler.CheckPath(pathSplit)
-			w.WriteHeader(status)
-		} else {
 
-			w.WriteHeader(http.StatusBadRequest)
+		pathSplit := strings.Split(r.URL.Path, "/")
+		status := h.AddHandler.CheckAddPath(pathSplit)
+		w.WriteHeader(status)
+		w.Header().Set("content-type", "text/plain")
+		w.Header().Add("content-type", "charset=utf-8")
+	}
+}
+
+func (h AddHandler) GetMetricHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("content-type", "text/plain")
+		w.Header().Add("content-type", "charset=utf-8")
+		pathSplit := strings.Split(r.URL.Path, "/")
+		metrics, status := h.AddHandler.GetMetric(pathSplit)
+		if status == models.StatusOK {
+			w.WriteHeader(status)
+
+			render.PlainText(w, r, metrics)
+
 			return
 		}
+		w.WriteHeader(status)
+
+	}
+}
+func (h AddHandler) GetAllMetricsHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("content-type", "text/html")
+		w.Header().Add("content-type", "charset=utf-8")
+		count, gauge := h.AddHandler.GetAllMetrics()
+		jsonCount, err := json.Marshal(count)
+		if err != nil {
+			w.WriteHeader(500)
+			return
+		}
+		jsonGauge, err := json.Marshal(gauge)
+		if err != nil {
+			w.WriteHeader(500)
+			return
+		}
+		str := string(jsonCount) + string(jsonGauge)
+		w.WriteHeader(models.StatusOK)
+
+		render.HTML(w, r, str)
+
 	}
 }

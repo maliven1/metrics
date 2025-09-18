@@ -7,6 +7,8 @@ type Cache interface {
 	GetCounter() map[string]int64
 	CheckCounter(key string) bool
 	AddCounter(key string, value int64)
+	GetItemGauge(s string) (string, float64)
+	GetItemCounter(s string) (string, int64)
 }
 type MemStorage struct {
 	cache Cache
@@ -29,6 +31,13 @@ func (c *MemStorage) GetGauge() map[string]float64 {
 	return c.cache.GetGauge()
 }
 
+func (c *MemStorage) GetItemGauge(s string) (string, float64) {
+	return c.cache.GetItemGauge(s)
+}
+func (c *MemStorage) GetItemCounter(s string) (string, int64) {
+
+	return c.cache.GetItemCounter(s)
+}
 func (c *MemStorage) GetCounter() map[string]int64 {
 	return c.cache.GetCounter()
 }
