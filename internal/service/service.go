@@ -49,14 +49,14 @@ func (s Service) GetMetric(pathSplit []string) (string, int) {
 		return "", models.StatusNotFound
 	}
 	if name, v := s.memStorage.GetItemGauge(pathSplit[3]); pathSplit[2] == models.Gauge && name != "" {
-		metrics := name + fmt.Sprint(" ", v)
+		metrics := fmt.Sprint(v)
 		return metrics, models.StatusOK
 	} else if name, v := s.memStorage.GetItemCounter(pathSplit[3]); pathSplit[2] == models.Counter && name != "" {
-		metrics := name + fmt.Sprint(" ", v)
+		metrics := fmt.Sprint(v)
 		return metrics, models.StatusOK
 	}
 
-	return "", models.StatusBadRequest
+	return "", models.StatusNotFound
 }
 
 func (s Service) GetAllMetrics() (map[string]int64, map[string]float64) {
