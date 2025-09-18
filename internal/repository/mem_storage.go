@@ -5,8 +5,7 @@ type Cache interface {
 	SetCounter(key string, value int64)
 	GetGauge() map[string]float64
 	GetCounter() map[string]int64
-	CheckCounter(key string) bool
-	AddCounter(key string, value int64)
+	AddCounter(key string, value int64) bool
 	GetItemGauge(s string) (string, float64)
 	GetItemCounter(s string) (string, int64)
 }
@@ -42,11 +41,7 @@ func (c *MemStorage) GetCounter() map[string]int64 {
 	return c.cache.GetCounter()
 }
 
-func (c *MemStorage) CheckCounter(key string) bool {
+func (c *MemStorage) AddCounter(key string, value int64) bool {
 
-	return c.cache.CheckCounter(key)
-}
-
-func (c *MemStorage) AddCounter(key string, value int64) {
-	c.cache.AddCounter(key, value)
+	return c.cache.AddCounter(key, value)
 }

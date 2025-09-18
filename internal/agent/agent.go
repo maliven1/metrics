@@ -13,8 +13,7 @@ type MemStorage interface {
 	SetCounter(key string, value int64)
 	GetGauge() map[string]float64
 	GetCounter() map[string]int64
-	CheckCounter(key string) bool
-	AddCounter(key string, value int64)
+	AddCounter(key string, value int64) bool
 }
 
 type Agent struct {
@@ -70,8 +69,7 @@ func (a Agent) addMetrics() {
 	a.memStorage.SetGauge(models.Sys, float64(mem.Sys))
 	a.memStorage.SetGauge(models.TotalAlloc, float64(mem.TotalAlloc))
 	a.memStorage.SetGauge(models.RandomValue, rand.Float64())
-	if a.memStorage.CheckCounter(models.Counter) {
-		a.memStorage.AddCounter(models.Counter, count)
+	if a.memStorage.AddCounter(models.Counter, count) {
 		return
 	}
 	a.memStorage.SetCounter(models.Counter, count)

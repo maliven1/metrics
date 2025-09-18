@@ -55,7 +55,13 @@ func (m *MemStorage) CheckCounter(key string) bool {
 	return ok
 }
 
-func (m *MemStorage) AddCounter(key string, value int64) {
-	m.memCache.Counter[key] = +value
+func (m *MemStorage) AddCounter(key string, value int64) bool {
+	_, ok := m.memCache.Counter[key]
+	if ok {
+		m.memCache.Counter[key] += value
+		return ok
+	}
+
+	return ok
 
 }

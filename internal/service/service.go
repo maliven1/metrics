@@ -10,8 +10,7 @@ import (
 type MemStorage interface {
 	SetGauge(key string, value float64)
 	SetCounter(key string, value int64)
-	CheckCounter(key string) bool
-	AddCounter(key string, value int64)
+	AddCounter(key string, value int64) bool
 	GetItemGauge(s string) (string, float64)
 	GetGauge() map[string]float64
 	GetCounter() map[string]int64
@@ -34,8 +33,7 @@ func (s Service) CheckAddPath(pathSplit []string) int {
 		s.memStorage.SetGauge(pathSplit[3], float)
 		return models.StatusOK
 	} else if count, err := strconv.Atoi(pathSplit[4]); pathSplit[2] == models.Counter && err == nil {
-		if s.memStorage.CheckCounter(pathSplit[3]) {
-			s.memStorage.AddCounter(pathSplit[3], int64(count))
+		if s.memStorage.AddCounter(pathSplit[3], int64(count)) {
 			return models.StatusOK
 		}
 		s.memStorage.SetCounter(pathSplit[3], int64(count))
