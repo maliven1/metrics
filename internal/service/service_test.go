@@ -8,7 +8,7 @@ import (
 	"github.com/maliven1/metrics/internal/storage"
 )
 
-func TestService_CheckPath(t *testing.T) {
+func TestService_CheckAddPath(t *testing.T) {
 	memStorage := storage.NewMemStorage()
 	cache := repository.NewCache(memStorage)
 	s := NewService(cache)
@@ -40,7 +40,7 @@ func TestService_CheckPath(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := s.CheckPath(tt.args.pathSplit); got != tt.want {
+			if got := s.CheckAddPath(tt.args.pathSplit); got != tt.want {
 				t.Errorf("Service.CheckPath() = %v, want %v", got, tt.want)
 			}
 		})
