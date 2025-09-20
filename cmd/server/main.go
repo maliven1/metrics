@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	config.ParseFlags()
+	config.ParseServerFlags()
 	memStorage := storage.NewMemStorage()
 	cache := repository.NewCache(memStorage)
 	service := service.NewService(cache)

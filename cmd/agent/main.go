@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	config.ParseFlags()
+	config.ParseAgentFlags()
 	memStorage := storage.NewMemStorage()
 	cache := repository.NewCache(memStorage)
 	service := agent.NewAgent(cache)
