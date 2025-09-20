@@ -12,7 +12,10 @@ const (
 	StatusCreated    = 201
 )
 
-var FlagRunAddr string
+var (
+	FlagServerRunAddr string
+	FlagAgentRunAddr  string
+)
 
 var (
 	PollInterval   int

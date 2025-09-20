@@ -23,7 +23,7 @@ func NewSendClient(s Agent) *SendClient {
 }
 
 func (s SendClient) SendClientMetrics() {
-	endpoint := "http://localhost" + models.FlagRunAddr + "/update/"
+	endpoint := "http://localhost" + models.FlagAgentRunAddr + "/update/"
 	client := &http.Client{}
 	go s.AddHandler.CollectMetrics()
 	for {
