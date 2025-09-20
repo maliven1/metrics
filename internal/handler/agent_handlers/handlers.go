@@ -23,7 +23,7 @@ func NewSendClient(s Agent) *SendClient {
 }
 
 func (s SendClient) SendClientMetrics() {
-	endpoint := "http://localhost:8080/update/"
+	endpoint := "http://localhost" + models.FlagRunAddr + "/update/"
 	client := &http.Client{}
 	go s.AddHandler.CollectMetrics()
 	for {
@@ -33,21 +33,16 @@ func (s SendClient) SendClientMetrics() {
 			if i == "" {
 				continue
 			}
-			// контейнер данных для запроса
+
 			data, _ := url.JoinPath(models.Gauge, i, fmt.Sprint(v))
 
-			// добавляем HTTP-клиент
-
-			// пишем запрос
-			// запрос методом POST должен, помимо заголовков, содержать тело
-			// тело должно быть источником потокового чтения io.Reader
 			request, err := http.NewRequest(http.MethodPost, endpoint+data, nil)
 			if err != nil {
 				panic(err)
 			}
-			// в заголовках запроса указываем кодировку
+
 			request.Header.Add("Content-Type", "Content-Type: text/plain")
-			// отправляем запрос и получаем ответ
+
 			response, err := client.Do(request)
 			if err != nil {
 				panic(err)
@@ -60,21 +55,16 @@ func (s SendClient) SendClientMetrics() {
 			if i == "" {
 				continue
 			}
-			// контейнер данных для запроса
+
 			data, _ := url.JoinPath(models.Counter, i, fmt.Sprint(v))
 
-			// добавляем HTTP-клиент
-
-			// пишем запрос
-			// запрос методом POST должен, помимо заголовков, содержать тело
-			// тело должно быть источником потокового чтения io.Reader
 			request, err := http.NewRequest(http.MethodPost, endpoint+data, nil)
 			if err != nil {
 				panic(err)
 			}
-			// в заголовках запроса указываем кодировку
+
 			request.Header.Add("Content-Type", "Content-Type: text/plain")
-			// отправляем запрос и получаем ответ
+
 			response, err := client.Do(request)
 			if err != nil {
 				panic(err)
@@ -83,14 +73,5 @@ func (s SendClient) SendClientMetrics() {
 			fmt.Println("Статус-код ", response.Status, i, v)
 			response.Body.Close()
 		}
-		// выводим код ответа
-
-		// читаем поток из тела ответа
-		// body, err := io.ReadAll(response.Body)
-		// if err != nil {
-		// 	panic(err)
-		// }
-		// и печатаем его
-		// fmt.Println(string(body))
 	}
 }

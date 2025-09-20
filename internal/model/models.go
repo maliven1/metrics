@@ -12,9 +12,11 @@ const (
 	StatusCreated    = 201
 )
 
-const (
-	PollInterval   = 2
-	ReportInterval = 10
+var FlagRunAddr string
+
+var (
+	PollInterval   int
+	ReportInterval int
 )
 
 const (
