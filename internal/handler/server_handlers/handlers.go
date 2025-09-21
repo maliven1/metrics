@@ -9,6 +9,7 @@ import (
 	models "github.com/maliven1/metrics/internal/model"
 )
 
+//go:generate mockgen -source=./handlers.go -destination=mocks/mock.go
 type Service interface {
 	CheckAddPath(pathSplit []string) int
 	GetMetric(pathSplit []string) (string, int)
@@ -23,7 +24,7 @@ func NewAddHandler(s Service) *AddHandler {
 	return &AddHandler{AddHandler: s}
 }
 
-func (h AddHandler) PostHandler() http.HandlerFunc {
+func PostHandler(h AddHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		pathSplit := strings.Split(r.URL.Path, "/")
@@ -34,7 +35,7 @@ func (h AddHandler) PostHandler() http.HandlerFunc {
 	}
 }
 
-func (h AddHandler) GetMetricHandler() http.HandlerFunc {
+func GetMetricHandler(h AddHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "text/plain")
 		w.Header().Add("content-type", "charset=utf-8")
@@ -51,7 +52,8 @@ func (h AddHandler) GetMetricHandler() http.HandlerFunc {
 
 	}
 }
-func (h AddHandler) GetAllMetricsHandler() http.HandlerFunc {
+
+func GetAllMetricsHandler(h AddHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "text/html")
 		w.Header().Add("content-type", "charset=utf-8")
