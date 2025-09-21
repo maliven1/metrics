@@ -25,6 +25,7 @@ func NewService(m MemStorage) *Service {
 	return &Service{memStorage: m}
 }
 
+//go:generate mockgen -source=service.go -destination=mocks/mock.go
 func (s Service) CheckAddPath(pathSplit []string) int {
 	if len(pathSplit) != 5 {
 		return models.StatusNotFound
@@ -42,6 +43,7 @@ func (s Service) CheckAddPath(pathSplit []string) int {
 		return models.StatusBadRequest
 	}
 }
+
 func (s Service) GetMetric(pathSplit []string) (string, int) {
 	if len(pathSplit) != 4 {
 		return "", models.StatusNotFound
