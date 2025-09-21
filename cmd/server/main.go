@@ -24,6 +24,7 @@ func main() {
 	router.Post(`/update/*`, h.PostHandler())
 	router.Get(`/value/*`, h.GetMetricHandler())
 	router.Get(`/`, h.GetAllMetricsHandler())
+
 	log.Println("serv start on", models.FlagServerRunAddr)
 	err := http.ListenAndServe(models.FlagServerRunAddr, router)
 	if err != nil {
