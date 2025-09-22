@@ -2,6 +2,7 @@ package agenthandlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"time"
@@ -16,14 +17,15 @@ type Agent interface {
 
 type SendClient struct {
 	AddHandler Agent
+	flag       string
 }
 
-func NewSendClient(s Agent) *SendClient {
-	return &SendClient{AddHandler: s}
+func NewSendClient(s Agent, flag string) *SendClient {
+	return &SendClient{AddHandler: s, flag: flag}
 }
 
 func (s SendClient) SendClientMetrics() {
-	endpoint := "http://" + models.FlagAgentRunAddr + "/update/"
+	endpoint := "http://" + s.flag + "/update/"
 	client := &http.Client{}
 	go s.AddHandler.CollectMetrics()
 	for {
@@ -38,17 +40,16 @@ func (s SendClient) SendClientMetrics() {
 
 			request, err := http.NewRequest(http.MethodPost, endpoint+data, nil)
 			if err != nil {
-				panic(err)
+				log.Println(err)
 			}
 
 			request.Header.Add("Content-Type", "Content-Type: text/plain")
 
 			response, err := client.Do(request)
 			if err != nil {
-				panic(err)
+				log.Println(err)
 			}
-			fmt.Println(request)
-			fmt.Println("Статус-код ", response.Status, i, v)
+
 			response.Body.Close()
 		}
 		for i, v := range Counter {
@@ -60,17 +61,15 @@ func (s SendClient) SendClientMetrics() {
 
 			request, err := http.NewRequest(http.MethodPost, endpoint+data, nil)
 			if err != nil {
-				panic(err)
+				log.Println(err)
 			}
 
 			request.Header.Add("Content-Type", "Content-Type: text/plain")
 
 			response, err := client.Do(request)
 			if err != nil {
-				panic(err)
+				log.Println(err)
 			}
-			fmt.Println(request)
-			fmt.Println("Статус-код ", response.Status, i, v)
 			response.Body.Close()
 		}
 	}

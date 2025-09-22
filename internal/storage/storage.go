@@ -46,14 +46,6 @@ func (m *MemStorage) GetItemGauge(s string) (string, float64) {
 	}
 	return "", 0
 }
-func (m *MemStorage) CheckCounter(key string) bool {
-	_, ok := m.memCache.Counter[key]
-	if ok {
-		return ok
-	}
-
-	return ok
-}
 
 func (m *MemStorage) AddCounter(key string, value int64) bool {
 	_, ok := m.memCache.Counter[key]

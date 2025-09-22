@@ -59,7 +59,7 @@ func (a Agent) addMetrics() {
 	a.memStorage.SetGauge(models.MSpanInuse, float64(mem.MSpanInuse))
 	a.memStorage.SetGauge(models.MSpanSys, float64(mem.MSpanSys))
 	a.memStorage.SetGauge(models.Mallocs, float64(mem.Mallocs))
-	a.memStorage.SetGauge(models.NextGC, float64(mem.NextGC))
+	a.memStorage.SetGauge(models.NumForcedGC, float64(mem.NextGC))
 	a.memStorage.SetGauge(models.NumForcedGC, float64(mem.NextGC))
 	a.memStorage.SetGauge(models.NumGC, float64(mem.NumGC))
 	a.memStorage.SetGauge(models.OtherSys, float64(mem.OtherSys))
