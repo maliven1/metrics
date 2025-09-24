@@ -18,7 +18,7 @@ import (
 )
 
 func main() {
-	flagServerRunAddr := config.ParseServerFlags()
+	cfg := config.NewEnvServerConfig()
 	memStorage := storage.NewMemStorage()
 	cache := repository.NewCache(memStorage)
 	service := service.NewService(cache)
@@ -29,9 +29,9 @@ func main() {
 	router.Get(`/value/*`, h.GetMetricHandler())
 	router.Get(`/`, h.GetAllMetricsHandler())
 
-	log.Println("serv start on", flagServerRunAddr)
+	log.Println("serv start on", cfg.Address)
 	srv := &http.Server{
-		Addr:    flagServerRunAddr,
+		Addr:    cfg.Address,
 		Handler: router,
 	}
 
