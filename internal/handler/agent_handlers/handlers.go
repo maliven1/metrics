@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/maliven1/metrics/internal/config"
 	models "github.com/maliven1/metrics/internal/model"
 )
 
@@ -17,19 +18,19 @@ type Agent interface {
 
 type SendClient struct {
 	AddHandler Agent
-	flag       string
+	cfg        *config.Config
 }
 
-func NewSendClient(s Agent, flag string) *SendClient {
-	return &SendClient{AddHandler: s, flag: flag}
+func NewSendClient(s Agent, cfg *config.Config) *SendClient {
+	return &SendClient{AddHandler: s, cfg: cfg}
 }
 
 func (s SendClient) SendClientMetrics() {
-	endpoint := "http://" + s.flag + "/update/"
+	endpoint := "http://" + s.cfg.Address + "/update/"
 	client := &http.Client{}
 	go s.AddHandler.CollectMetrics()
 	for {
-		time.Sleep(time.Duration(models.ReportInterval) * time.Second)
+		time.Sleep(time.Duration(s.cfg.ReportInterval) * time.Second)
 		Gauge, Counter := s.AddHandler.GetMetrics()
 		for i, v := range Gauge {
 			if i == "" {

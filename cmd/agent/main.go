@@ -9,11 +9,11 @@ import (
 )
 
 func main() {
-	parseAgentFlags := config.ParseAgentFlags()
+	cfg := config.NewEnvAgentConfig()
 	memStorage := storage.NewMemStorage()
 	cache := repository.NewCache(memStorage)
-	service := agent.NewAgent(cache)
-	client := agenthandlers.NewSendClient(service, parseAgentFlags)
+	service := agent.NewAgent(cache, cfg)
+	client := agenthandlers.NewSendClient(service, cfg)
 	client.SendClientMetrics()
 
 }

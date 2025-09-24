@@ -12,16 +12,6 @@ const (
 	StatusCreated    = 201
 )
 
-var (
-	FlagServerRunAddr string
-	FlagAgentRunAddr  string
-)
-
-var (
-	PollInterval   int
-	ReportInterval int
-)
-
 const (
 	Alloc         = "Alloc"
 	BuckHashSys   = "BuckHashSys"

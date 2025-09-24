@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/maliven1/metrics/internal/config"
 	models "github.com/maliven1/metrics/internal/model"
 )
 
@@ -18,10 +19,11 @@ type MemStorage interface {
 
 type Agent struct {
 	memStorage MemStorage
+	cfg        *config.Config
 }
 
-func NewAgent(m MemStorage) *Agent {
-	return &Agent{memStorage: m}
+func NewAgent(m MemStorage, cfg *config.Config) *Agent {
+	return &Agent{memStorage: m, cfg: cfg}
 }
 
 func (a Agent) GetMetrics() (map[string]float64, map[string]int64) {
@@ -31,7 +33,7 @@ func (a Agent) GetMetrics() (map[string]float64, map[string]int64) {
 func (a Agent) CollectMetrics() {
 	for {
 		a.addMetrics()
-		time.Sleep(time.Duration(models.PollInterval) * time.Second)
+		time.Sleep(time.Duration(a.cfg.PollInterval) * time.Second)
 	}
 
 }
