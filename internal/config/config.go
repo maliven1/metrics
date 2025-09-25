@@ -13,10 +13,14 @@ var (
 	reportInterval    int
 )
 
-type Config struct {
+type AgentConfig struct {
 	Address        string `env:"ADDRESS"`
 	ReportInterval int    `env:"REPORT_INTERVAL"`
 	PollInterval   int    `env:"POLL_INTERVAL"`
+}
+
+type ServerConfig struct {
+	Address string `env:"ADDRESS"`
 }
 
 func ParseServerFlags() {
@@ -31,9 +35,9 @@ func ParseAgentFlags() {
 
 }
 
-func NewEnvServerConfig() *Config {
+func NewEnvServerConfig() *ServerConfig {
 	ParseServerFlags()
-	var cfg Config
+	var cfg ServerConfig
 
 	env.Parse(&cfg)
 	if cfg.Address == "" {
@@ -44,9 +48,9 @@ func NewEnvServerConfig() *Config {
 
 }
 
-func NewEnvAgentConfig() *Config {
+func NewEnvAgentConfig() *AgentConfig {
 	ParseAgentFlags()
-	var cfg Config
+	var cfg AgentConfig
 
 	env.Parse(&cfg)
 	if cfg.Address == "" {

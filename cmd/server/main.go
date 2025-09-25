@@ -12,6 +12,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/maliven1/metrics/internal/config"
 	serverhandlers "github.com/maliven1/metrics/internal/handler/server_handlers"
+	"github.com/maliven1/metrics/internal/logger"
 	"github.com/maliven1/metrics/internal/repository"
 	"github.com/maliven1/metrics/internal/service"
 	"github.com/maliven1/metrics/internal/storage"
@@ -19,15 +20,19 @@ import (
 
 func main() {
 	cfg := config.NewEnvServerConfig()
+	logger.Initialize()
 	memStorage := storage.NewMemStorage()
 	cache := repository.NewCache(memStorage)
 	service := service.NewService(cache)
 	h := serverhandlers.NewAddHandler(service)
 
 	router := chi.NewRouter()
-	router.Post(`/update/*`, h.PostHandler())
-	router.Get(`/value/*`, h.GetMetricHandler())
-	router.Get(`/`, h.GetAllMetricsHandler())
+	router.Group(func(r chi.Router) {
+		r.Use(logger.WithLogging)
+		r.Post(`/update/*`, h.PostHandler())
+		r.Get(`/value/*`, h.GetMetricHandler())
+		r.Get(`/`, h.GetAllMetricsHandler())
+	})
 
 	log.Println("serv start on", cfg.Address)
 	srv := &http.Server{

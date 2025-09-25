@@ -18,10 +18,10 @@ type Agent interface {
 
 type SendClient struct {
 	AddHandler Agent
-	cfg        *config.Config
+	cfg        *config.AgentConfig
 }
 
-func NewSendClient(s Agent, cfg *config.Config) *SendClient {
+func NewSendClient(s Agent, cfg *config.AgentConfig) *SendClient {
 	return &SendClient{AddHandler: s, cfg: cfg}
 }
 

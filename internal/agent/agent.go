@@ -19,10 +19,10 @@ type MemStorage interface {
 
 type Agent struct {
 	memStorage MemStorage
-	cfg        *config.Config
+	cfg        *config.AgentConfig
 }
 
-func NewAgent(m MemStorage, cfg *config.Config) *Agent {
+func NewAgent(m MemStorage, cfg *config.AgentConfig) *Agent {
 	return &Agent{memStorage: m, cfg: cfg}
 }
 
