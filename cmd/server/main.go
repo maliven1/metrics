@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -20,7 +19,7 @@ import (
 
 func main() {
 	cfg := config.NewEnvServerConfig()
-	logger.Initialize()
+	log := logger.Initialize()
 	memStorage := storage.NewMemStorage()
 	cache := repository.NewCache(memStorage)
 	service := service.NewService(cache)
@@ -34,7 +33,7 @@ func main() {
 		r.Get(`/`, h.GetAllMetricsHandler())
 	})
 
-	log.Println("serv start on", cfg.Address)
+	log.Info("serv start on", cfg.Address, " time:", time.Now())
 	srv := &http.Server{
 		Addr:    cfg.Address,
 		Handler: router,
@@ -50,7 +49,7 @@ func main() {
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
 
-	log.Println("Shutdown Server ...")
+	log.Info("Shutdown Server ...", " time:", time.Now())
 
 	// Завершаем сервер с таймаутом
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -61,11 +60,11 @@ func main() {
 	} else {
 		select {
 		case <-ctx.Done():
-			log.Println("timeout of 30sec occurred")
+			log.Info("timeout of 30sec occurred", " time:", time.Now())
 		default:
 			time.Sleep(time.Second * 5)
 		}
 	}
 
-	log.Println("Server exited gracefully")
+	log.Info("Server exited gracefully", " time:", time.Now())
 }
