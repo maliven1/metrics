@@ -47,7 +47,6 @@ const (
 type MemStorage struct {
 	Gauge   map[string]float64
 	Counter map[string]int64
-	D       string
 }
 
 // NOTE: Не усложняем пример, вводя иерархическую вложенность структур.
@@ -61,12 +60,4 @@ type Metrics struct {
 	Delta *int64   `json:"delta,omitempty"`
 	Value *float64 `json:"value,omitempty"`
 	Hash  string   `json:"hash,omitempty"`
-}
-
-type AgentMetrics struct {
-	ID    string  `json:"id"`
-	MType string  `json:"type"`
-	Delta int64   `json:"delta,omitempty"`
-	Value float64 `json:"value,omitempty"`
-	Hash  string  `json:"hash,omitempty"`
 }
