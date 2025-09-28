@@ -1,6 +1,8 @@
 package agenthandlers
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -66,6 +68,66 @@ func (s SendClient) SendClientMetrics() {
 			}
 
 			request.Header.Add("Content-Type", "Content-Type: text/plain")
+
+			response, err := client.Do(request)
+			if err != nil {
+				log.Println(err)
+			}
+			response.Body.Close()
+		}
+	}
+}
+
+func (s SendClient) SendClientJsonMetrics() {
+	endpoint := "http://" + s.cfg.Address + "/update/"
+	client := &http.Client{}
+	go s.AddHandler.CollectMetrics()
+	for {
+		time.Sleep(time.Duration(s.cfg.ReportInterval) * time.Second)
+		Gauge, Counter := s.AddHandler.GetMetrics()
+		for i, v := range Gauge {
+			if i == "" {
+				return
+			}
+
+			metric := models.Metrics{MType: models.Gauge, ID: i, Value: &v}
+			data, err := json.Marshal(metric)
+			if err != nil {
+				log.Println(err)
+			}
+			reader := bytes.NewReader(data)
+
+			request, err := http.NewRequest(http.MethodPost, endpoint, reader)
+			if err != nil {
+				log.Println(err)
+			}
+
+			request.Header.Add("Content-Type", "Content-Type: application/json")
+
+			response, err := client.Do(request)
+			if err != nil {
+				log.Println(err)
+			}
+
+			response.Body.Close()
+		}
+		for i, v := range Counter {
+			if i == "" {
+				return
+			}
+
+			metric := models.Metrics{MType: models.Counter, ID: i, Delta: &v}
+			data, err := json.Marshal(metric)
+			if err != nil {
+				log.Println(err)
+			}
+			reader := bytes.NewReader(data)
+			request, err := http.NewRequest(http.MethodPost, endpoint, reader)
+			if err != nil {
+				log.Println(err)
+			}
+
+			request.Header.Add("Content-Type", "Content-Type: application/json")
 
 			response, err := client.Do(request)
 			if err != nil {

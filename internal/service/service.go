@@ -31,7 +31,7 @@ func (s Service) AddStructMetric(metric models.Metrics) int {
 	if metric.MType == models.Gauge && metric.Value != nil {
 		s.memStorage.SetGauge(metric.ID, *metric.Value)
 		return models.StatusOK
-	} else if metric.MType == models.Counter && metric.Delta == nil {
+	} else if metric.MType == models.Counter && metric.Delta != nil {
 		if s.memStorage.AddCounter(metric.ID, *metric.Delta) {
 			return models.StatusOK
 		}
