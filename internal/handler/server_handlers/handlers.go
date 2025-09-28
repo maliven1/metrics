@@ -73,6 +73,12 @@ func (h AddHandler) PostBodyHandler() http.HandlerFunc {
 			return
 		}
 		status := h.AddHandler.AddStructMetric(metric)
+		resp, err := json.Marshal(metric)
+		if err != nil {
+			w.WriteHeader(models.StatusInternalServerError)
+			return
+		}
+		w.Write(resp)
 		w.WriteHeader(status)
 		w.Header().Set("content-type", "text/plain")
 		w.Header().Add("content-type", "charset=utf-8")
