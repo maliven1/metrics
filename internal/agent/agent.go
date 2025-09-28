@@ -71,8 +71,8 @@ func (a Agent) addMetrics() {
 	a.memStorage.SetGauge(models.Sys, float64(mem.Sys))
 	a.memStorage.SetGauge(models.TotalAlloc, float64(mem.TotalAlloc))
 	a.memStorage.SetGauge(models.RandomValue, rand.Float64())
-	if a.memStorage.AddCounter(models.Counter, count) {
+	if a.memStorage.AddCounter("PollCount", count) {
 		return
 	}
-	a.memStorage.SetCounter(models.Counter, count)
+	a.memStorage.SetCounter("PollCount", count)
 }
