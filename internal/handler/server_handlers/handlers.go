@@ -73,14 +73,8 @@ func (h AddHandler) PostBodyHandler() http.HandlerFunc {
 			return
 		}
 		status := h.AddHandler.AddStructMetric(metric)
-		resp, err := json.Marshal(metric)
-		if err != nil {
-			w.WriteHeader(models.StatusInternalServerError)
-			return
-		}
 
 		w.WriteHeader(status)
-		w.Write(resp)
 
 	}
 }
