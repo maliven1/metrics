@@ -3,7 +3,6 @@ package serverhandlers
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -65,18 +64,21 @@ func (h AddHandler) PostBodyHandler() http.HandlerFunc {
 		var metric models.Metrics
 		_, err := buf.ReadFrom(r.Body)
 		if err != nil {
-			fmt.Println("ziz")
 			w.WriteHeader(models.StatusBadRequest)
 			return
 		}
 		if err = json.Unmarshal(buf.Bytes(), &metric); err != nil {
-			fmt.Println("piz")
 			w.WriteHeader(models.StatusBadRequest)
 
 			return
 		}
 		status := h.AddHandler.AddStructMetric(metric)
-
+		resp, err := json.Marshal(metric)
+		if err != nil {
+			w.WriteHeader(models.StatusInternalServerError)
+			return
+		}
+		w.Write(resp)
 		w.WriteHeader(status)
 		w.Header().Set("content-type", "application/json")
 	}
