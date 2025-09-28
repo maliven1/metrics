@@ -29,8 +29,8 @@ func main() {
 	router.Group(func(r chi.Router) {
 		r.Use(logger.WithLogging)
 		r.Post(`/update/*`, h.PostURLHandler())
-		r.Post(`/update/`, h.PostBodyHandler())
-		r.Post(`/value/`, h.GetBodyMetricHandler())
+		r.Post(`/update`, h.PostBodyHandler())
+		r.Post(`/value`, h.GetBodyMetricHandler())
 		r.Get(`/value/*`, h.GetMetricHandler())
 		r.Get(`/`, h.GetAllMetricsHandler())
 

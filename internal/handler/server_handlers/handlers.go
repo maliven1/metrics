@@ -29,7 +29,6 @@ func NewAddHandler(s Service) *AddHandler {
 func (h AddHandler) GetBodyMetricHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "application/json")
-		w.Header().Add("content-type", "charset=utf-8")
 		var buf bytes.Buffer
 		var metric models.Metrics
 		_, err := buf.ReadFrom(r.Body)
@@ -80,8 +79,7 @@ func (h AddHandler) PostBodyHandler() http.HandlerFunc {
 		}
 		w.Write(resp)
 		w.WriteHeader(status)
-		w.Header().Set("content-type", "text/plain")
-		w.Header().Add("content-type", "charset=utf-8")
+		w.Header().Set("content-type", "application/json")
 	}
 }
 
