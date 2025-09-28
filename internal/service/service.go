@@ -26,6 +26,38 @@ func NewService(m MemStorage) *Service {
 }
 
 //go:generate mockgen -source=service.go -destination=mocks/mock.go
+func (s Service) AddStructMetric(metric models.Metrics) int {
+
+	if metric.MType == models.Gauge && metric.Value != nil {
+		s.memStorage.SetGauge(metric.ID, *metric.Value)
+		return models.StatusOK
+	} else if metric.MType == models.Counter && metric.Delta == nil {
+		if s.memStorage.AddCounter(metric.ID, *metric.Delta) {
+			return models.StatusOK
+		}
+		s.memStorage.SetCounter(metric.ID, *metric.Delta)
+		return models.StatusOK
+	} else {
+		return models.StatusBadRequest
+	}
+}
+
+func (s Service) GetStructMetric(metric models.Metrics) (models.Metrics, int) {
+
+	if name, v := s.memStorage.GetItemGauge(metric.ID); metric.MType == models.Gauge && name != "" {
+		metric.Value = &v
+
+		return metric, models.StatusOK
+	} else if name, v := s.memStorage.GetItemCounter(metric.ID); metric.MType == models.Counter && name != "" {
+
+		metric.Delta = &v
+
+		return metric, models.StatusOK
+	}
+
+	return metric, models.StatusNotFound
+}
+
 func (s Service) CheckAddPath(pathSplit []string) int {
 	if len(pathSplit) != 5 {
 		return models.StatusNotFound

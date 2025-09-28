@@ -1,6 +1,7 @@
 package serverhandlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -13,6 +14,8 @@ type Service interface {
 	CheckAddPath(pathSplit []string) int
 	GetMetric(pathSplit []string) (string, int)
 	GetAllMetrics() (map[string]int64, map[string]float64)
+	AddStructMetric(metric models.Metrics) int
+	GetStructMetric(metric models.Metrics) (models.Metrics, int)
 }
 
 type AddHandler struct {
@@ -23,7 +26,60 @@ func NewAddHandler(s Service) *AddHandler {
 	return &AddHandler{AddHandler: s}
 }
 
-func (h AddHandler) PostHandler() http.HandlerFunc {
+func (h AddHandler) GetBodyMetricHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("content-type", "application/json")
+		w.Header().Add("content-type", "charset=utf-8")
+		var buf bytes.Buffer
+		var metric models.Metrics
+		_, err := buf.ReadFrom(r.Body)
+		if err != nil {
+			w.WriteHeader(models.StatusBadRequest)
+			return
+		}
+		if err = json.Unmarshal(buf.Bytes(), &metric); err != nil {
+			w.WriteHeader(models.StatusBadRequest)
+			return
+		}
+		res, status := h.AddHandler.GetStructMetric(metric)
+		resp, err := json.Marshal(res)
+		if err != nil {
+			w.WriteHeader(models.StatusInternalServerError)
+			return
+		}
+		if status == models.StatusOK {
+			w.WriteHeader(status)
+
+			w.Write(resp)
+
+			return
+		}
+		w.WriteHeader(status)
+	}
+}
+
+func (h AddHandler) PostBodyHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		var buf bytes.Buffer
+		var metric models.Metrics
+		_, err := buf.ReadFrom(r.Body)
+		if err != nil {
+			w.WriteHeader(models.StatusBadRequest)
+			return
+		}
+		if err = json.Unmarshal(buf.Bytes(), &metric); err != nil {
+			w.WriteHeader(models.StatusBadRequest)
+			return
+		}
+		status := h.AddHandler.AddStructMetric(metric)
+		w.WriteHeader(status)
+		w.Header().Set("content-type", "text/plain")
+		w.Header().Add("content-type", "charset=utf-8")
+	}
+}
+
+func (h AddHandler) PostURLHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		pathSplit := strings.Split(r.URL.Path, "/")
