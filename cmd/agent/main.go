@@ -14,7 +14,7 @@ func main() {
 	cache := repository.NewCache(memStorage)
 	service := agent.NewAgent(cache, cfg)
 	client := agenthandlers.NewSendClient(service, cfg)
-	go client.SendClientMetrics()
-	client.SendClientJSONMetrics()
+	client.SendClientMetrics()
+	//client.SendClientJSONMetrics()
 
 }
