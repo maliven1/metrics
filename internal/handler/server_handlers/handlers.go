@@ -59,7 +59,7 @@ func (h AddHandler) GetBodyMetricHandler() http.HandlerFunc {
 
 func (h AddHandler) PostBodyHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
+		w.Header().Set("content-type", "application/json")
 		var buf bytes.Buffer
 		var metric models.Metrics
 		_, err := buf.ReadFrom(r.Body)
@@ -78,9 +78,10 @@ func (h AddHandler) PostBodyHandler() http.HandlerFunc {
 			w.WriteHeader(models.StatusInternalServerError)
 			return
 		}
-		w.Write(resp)
+
 		w.WriteHeader(status)
-		w.Header().Set("content-type", "application/json")
+		w.Write(resp)
+
 	}
 }
 
