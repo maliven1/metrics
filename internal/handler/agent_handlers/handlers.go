@@ -46,7 +46,7 @@ func (s SendClient) SendClientMetrics() {
 				log.Println(err)
 			}
 
-			request.Header.Add("Content-Type", "Content-Type: text/plain")
+			request.Header.Set("content-type", "application/json")
 
 			response, err := client.Do(request)
 			if err != nil {
@@ -66,8 +66,7 @@ func (s SendClient) SendClientMetrics() {
 			if err != nil {
 				log.Println(err)
 			}
-
-			request.Header.Add("Content-Type", "Content-Type: text/plain")
+			request.Header.Set("content-type", "application/json")
 
 			response, err := client.Do(request)
 			if err != nil {
