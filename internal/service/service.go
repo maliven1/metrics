@@ -55,7 +55,7 @@ func (s Service) GetStructMetric(metric models.Metrics) (models.Metrics, int) {
 		metric.Value = &v
 
 		return metric, models.StatusOK
-	} else if _, v := s.memStorage.GetItemCounter(metric.ID); metric.MType == models.Counter && s.memStorage.CheckCounter(metric.ID) {
+	} else if _, v := s.memStorage.GetItemCounter(metric.ID); metric.MType == models.Counter {
 
 		metric.Delta = &v
 
