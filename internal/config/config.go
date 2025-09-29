@@ -28,7 +28,7 @@ func ParseServerFlags() {
 	flag.Parse()
 }
 func ParseAgentFlags() {
-	flag.StringVar(&flagAgentRunAddr, "a", ":8080", "address and port to run server")
+	flag.StringVar(&flagAgentRunAddr, "a", "localhost:8080", "address and port to run server")
 	flag.IntVar(&reportInterval, "r", 10, "frequency of sending metrics to the server")
 	flag.IntVar(&pollInterval, "p", 2, "metrics polling frequency")
 	flag.Parse()
