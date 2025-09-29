@@ -35,7 +35,7 @@ func main() {
 		r.Get(`/`, h.GetAllMetricsHandler())
 
 	})
-
+	log.Info("serv start on ", cfg.Address, " time:", time.Now())
 	srv := &http.Server{
 		Addr:    cfg.Address,
 		Handler: router,
@@ -46,7 +46,7 @@ func main() {
 			log.Fatalf("listen: %s\n", err)
 		}
 	}()
-	log.Info("serv start on ", cfg.Address, " time:", time.Now())
+
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
