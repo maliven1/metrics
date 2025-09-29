@@ -30,7 +30,7 @@ func main() {
 		r.Use(logger.WithLogging)
 		r.Post(`/update/*`, h.PostURLHandler())
 		r.Post(`/value/`, h.GetBodyMetricHandler())
-		r.Post(`/update/`, h.PostBodyHandler())
+		r.Post(`/update/`, h.PostBodyHandler(log))
 		r.Get(`/value/*`, h.GetMetricHandler())
 		r.Get(`/`, h.GetAllMetricsHandler())
 

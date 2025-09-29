@@ -3,12 +3,12 @@ package serverhandlers
 import (
 	"bytes"
 	"encoding/json"
-	"log"
 	"net/http"
 	"strings"
 
 	"github.com/go-chi/render"
 	models "github.com/maliven1/metrics/internal/model"
+	"go.uber.org/zap"
 )
 
 type Service interface {
@@ -59,19 +59,20 @@ func (h AddHandler) GetBodyMetricHandler() http.HandlerFunc {
 	}
 }
 
-func (h AddHandler) PostBodyHandler() http.HandlerFunc {
+func (h AddHandler) PostBodyHandler(log *zap.SugaredLogger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "application/json")
 		var buf bytes.Buffer
 		var metric models.Metrics
 		_, err := buf.ReadFrom(r.Body)
 		if err != nil {
-			log.Println("read err:", err)
+			log.Info("read err: ", err)
 			w.WriteHeader(models.StatusBadRequest)
+
 			return
 		}
 		if err = json.Unmarshal(buf.Bytes(), &metric); err != nil {
-			log.Println("unmarshal err:", err)
+			log.Info("Unmarshal err: ", err)
 			w.WriteHeader(models.StatusBadRequest)
 
 			return
