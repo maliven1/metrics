@@ -66,12 +66,12 @@ func (h AddHandler) PostBodyHandler() http.HandlerFunc {
 		var metric models.Metrics
 		_, err := buf.ReadFrom(r.Body)
 		if err != nil {
-			log.Println(err)
+			log.Println("read err:", err)
 			w.WriteHeader(models.StatusBadRequest)
 			return
 		}
 		if err = json.Unmarshal(buf.Bytes(), &metric); err != nil {
-			log.Println(err)
+			log.Println("unmarshal err:", err)
 			w.WriteHeader(models.StatusBadRequest)
 
 			return
