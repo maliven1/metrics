@@ -89,8 +89,8 @@ func (s SendClient) SendClientJSONMetrics() {
 			if i == "" {
 				continue
 			}
-			d := v
-			metric := models.Metrics{MType: models.Gauge, ID: i, Value: &d}
+
+			metric := models.Metrics{MType: models.Gauge, ID: i, Value: &v}
 			data, err := json.Marshal(metric)
 			if err != nil {
 				log.Println(err)
@@ -115,8 +115,8 @@ func (s SendClient) SendClientJSONMetrics() {
 			if i == "" {
 				continue
 			}
-			d := v
-			metric := models.Metrics{MType: models.Counter, ID: i, Delta: &d}
+
+			metric := models.Metrics{MType: models.Counter, ID: i, Delta: &v}
 			data, err := json.Marshal(metric)
 			if err != nil {
 				log.Println(err)
