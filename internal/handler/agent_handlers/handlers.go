@@ -86,8 +86,11 @@ func (s SendClient) SendClientJSONMetrics() {
 		time.Sleep(time.Duration(s.cfg.ReportInterval) * time.Second)
 		Gauge, Counter := s.AddHandler.GetMetrics()
 		for i, v := range Gauge {
-
-			metric := models.Metrics{MType: models.Gauge, ID: i, Value: &v}
+			if i == "" {
+				continue
+			}
+			d := v
+			metric := models.Metrics{MType: models.Gauge, ID: i, Value: &d}
 			data, err := json.Marshal(metric)
 			if err != nil {
 				log.Println(err)
@@ -109,8 +112,11 @@ func (s SendClient) SendClientJSONMetrics() {
 			response.Body.Close()
 		}
 		for i, v := range Counter {
-
-			metric := models.Metrics{MType: models.Counter, ID: i, Delta: &v}
+			if i == "" {
+				continue
+			}
+			d := v
+			metric := models.Metrics{MType: models.Counter, ID: i, Delta: &d}
 			data, err := json.Marshal(metric)
 			if err != nil {
 				log.Println(err)
