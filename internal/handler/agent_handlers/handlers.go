@@ -80,7 +80,6 @@ func (s SendClient) SendClientMetrics() {
 }
 
 func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger) {
-	time.Sleep(3 * time.Second)
 	endpoint := "http://" + s.cfg.Address + "/update/"
 	log.Info("start agent on endpoint: ", endpoint)
 	client := &http.Client{}
@@ -110,7 +109,7 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger) {
 			response, err := client.Do(request)
 			if err != nil {
 				log.Info(err)
-				continue
+				return
 			}
 
 			response.Body.Close()
@@ -136,7 +135,7 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger) {
 			response, err := client.Do(request)
 			if err != nil {
 				log.Info(err)
-				continue
+				return
 			}
 			response.Body.Close()
 		}
