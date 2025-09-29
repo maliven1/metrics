@@ -109,7 +109,7 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger) {
 			response, err := client.Do(request)
 			if err != nil {
 				log.Info(err)
-				return
+				continue
 			}
 
 			response.Body.Close()
@@ -135,7 +135,7 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger) {
 			response, err := client.Do(request)
 			if err != nil {
 				log.Info(err)
-				return
+				continue
 			}
 			response.Body.Close()
 		}
