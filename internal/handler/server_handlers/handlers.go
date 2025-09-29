@@ -27,23 +27,26 @@ func NewAddHandler(s Service) *AddHandler {
 	return &AddHandler{AddHandler: s}
 }
 
-func (h AddHandler) GetBodyMetricHandler() http.HandlerFunc {
+func (h AddHandler) GetBodyMetricHandler(log *zap.SugaredLogger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "application/json")
 		var buf bytes.Buffer
 		var metric models.Metrics
 		_, err := buf.ReadFrom(r.Body)
 		if err != nil {
+			log.Info("ReadFrom err:", err)
 			w.WriteHeader(models.StatusBadRequest)
 			return
 		}
 		if err = json.Unmarshal(buf.Bytes(), &metric); err != nil {
+			log.Info("Unmarshal err:", err)
 			w.WriteHeader(models.StatusBadRequest)
 			return
 		}
 		res, status := h.AddHandler.GetStructMetric(metric)
 		resp, err := json.Marshal(res)
 		if err != nil {
+			log.Info("Marshal err:", err)
 			w.WriteHeader(models.StatusInternalServerError)
 			return
 		}
@@ -54,25 +57,26 @@ func (h AddHandler) GetBodyMetricHandler() http.HandlerFunc {
 
 			return
 		}
+		log.Info("StatusBadRequest resp: ", resp, "metric: ", metric)
 		w.WriteHeader(status)
 		w.Write(resp)
 	}
 }
 
-func (h AddHandler) PostBodyHandler(log *zap.SugaredLogger) http.HandlerFunc {
+func (h AddHandler) PostBodyHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "application/json")
 		var buf bytes.Buffer
 		var metric models.Metrics
 		_, err := buf.ReadFrom(r.Body)
 		if err != nil {
-			log.Info("read err: ", err)
+
 			w.WriteHeader(models.StatusBadRequest)
 
 			return
 		}
 		if err = json.Unmarshal(buf.Bytes(), &metric); err != nil {
-			log.Info("Unmarshal err: ", err)
+
 			w.WriteHeader(models.StatusBadRequest)
 
 			return
