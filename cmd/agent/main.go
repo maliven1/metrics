@@ -4,16 +4,19 @@ import (
 	"github.com/maliven1/metrics/internal/agent"
 	"github.com/maliven1/metrics/internal/config"
 	agenthandlers "github.com/maliven1/metrics/internal/handler/agent_handlers"
+	"github.com/maliven1/metrics/internal/logger"
 	"github.com/maliven1/metrics/internal/repository"
 	"github.com/maliven1/metrics/internal/storage"
 )
 
 func main() {
+	log := logger.Initialize()
 	cfg := config.NewEnvAgentConfig()
 	memStorage := storage.NewMemStorage()
 	cache := repository.NewCache(memStorage)
 	service := agent.NewAgent(cache, cfg)
 	client := agenthandlers.NewSendClient(service, cfg)
+	log.Info("start agent")
 	client.SendClientJSONMetrics()
 	//client.SendClientMetrics()
 

@@ -11,6 +11,7 @@ import (
 
 	"github.com/maliven1/metrics/internal/config"
 	models "github.com/maliven1/metrics/internal/model"
+	"go.uber.org/zap"
 )
 
 type Agent interface {
@@ -78,8 +79,10 @@ func (s SendClient) SendClientMetrics() {
 	}
 }
 
-func (s SendClient) SendClientJSONMetrics() {
+func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger) {
+
 	endpoint := "http://" + s.cfg.Address + "/update/"
+	log.Info("start agent on endpoint: ", endpoint)
 	client := &http.Client{}
 	go s.AddHandler.CollectMetrics()
 	for {
@@ -93,20 +96,21 @@ func (s SendClient) SendClientJSONMetrics() {
 			metric := models.Metrics{MType: models.Gauge, ID: i, Value: &v}
 			data, err := json.Marshal(metric)
 			if err != nil {
-				log.Println(err)
+				log.Info(err)
 			}
 			reader := bytes.NewReader(data)
 
 			request, err := http.NewRequest(http.MethodPost, endpoint, reader)
 			if err != nil {
-				log.Println(err)
+				log.Info(err)
 			}
 
 			request.Header.Set("content-type", "application/json")
 
 			response, err := client.Do(request)
 			if err != nil {
-				log.Println(err)
+				log.Info(err)
+				continue
 			}
 
 			response.Body.Close()
@@ -119,19 +123,20 @@ func (s SendClient) SendClientJSONMetrics() {
 			metric := models.Metrics{MType: models.Counter, ID: i, Delta: &v}
 			data, err := json.Marshal(metric)
 			if err != nil {
-				log.Println(err)
+				log.Info(err)
 			}
 			reader := bytes.NewReader(data)
 			request, err := http.NewRequest(http.MethodPost, endpoint, reader)
 			if err != nil {
-				log.Println(err)
+				log.Info(err)
 			}
 
 			request.Header.Set("content-type", "application/json")
 
 			response, err := client.Do(request)
 			if err != nil {
-				log.Println(err)
+				log.Info(err)
+				continue
 			}
 			response.Body.Close()
 		}
