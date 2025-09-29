@@ -83,7 +83,7 @@ func (s SendClient) SendClientJSONMetrics() {
 	client := &http.Client{}
 	go s.AddHandler.CollectMetrics()
 	for {
-		time.Sleep(time.Duration(s.cfg.ReportInterval) * time.Second)
+
 		Gauge, Counter := s.AddHandler.GetMetrics()
 		for i, v := range Gauge {
 			if i == "" {
@@ -135,5 +135,6 @@ func (s SendClient) SendClientJSONMetrics() {
 			}
 			response.Body.Close()
 		}
+		time.Sleep(time.Duration(s.cfg.ReportInterval) * time.Second)
 	}
 }
