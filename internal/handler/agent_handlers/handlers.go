@@ -79,7 +79,7 @@ func (s SendClient) SendClientMetrics() {
 }
 
 func (s SendClient) SendClientJSONMetrics() {
-	endpoint := "http://localhost" + s.cfg.Address + "/update/"
+	endpoint := "http://" + s.cfg.Address + "/update/"
 	client := &http.Client{}
 	go s.AddHandler.CollectMetrics()
 	for {

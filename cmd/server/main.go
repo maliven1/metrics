@@ -36,7 +36,7 @@ func main() {
 
 	})
 
-	log.Info("serv start on", cfg.Address, " time:", time.Now())
+	log.Info("serv start on ", cfg.Address, " time:", time.Now())
 	srv := &http.Server{
 		Addr:    cfg.Address,
 		Handler: router,
