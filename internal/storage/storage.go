@@ -39,12 +39,28 @@ func (m *MemStorage) GetItemCounter(s string) (string, int64) {
 	}
 	return "", 0
 }
-func (m *MemStorage) GetItemGauge(s string) (string, float64) {
-	v, ok := m.memCache.Gauge[s]
+func (m *MemStorage) GetItemGauge(key string) (string, float64) {
+	v, ok := m.memCache.Gauge[key]
 	if ok {
-		return s, v
+		return key, v
 	}
 	return "", 0
+}
+func (m *MemStorage) CheckItemGauge(key string) bool {
+	_, ok := m.memCache.Gauge[key]
+	if ok {
+		return ok
+	}
+	return ok
+}
+func (m *MemStorage) CheckCounter(key string) bool {
+	_, ok := m.memCache.Counter[key]
+	if ok {
+		return ok
+	}
+
+	return ok
+
 }
 
 func (m *MemStorage) AddCounter(key string, value int64) bool {

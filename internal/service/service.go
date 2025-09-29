@@ -15,6 +15,8 @@ type MemStorage interface {
 	GetGauge() map[string]float64
 	GetCounter() map[string]int64
 	GetItemCounter(s string) (string, int64)
+	CheckCounter(key string) bool
+	CheckItemGauge(key string) bool
 }
 
 type Service struct {
@@ -49,11 +51,11 @@ func (s Service) GetStructMetric(metric models.Metrics) (models.Metrics, int) {
 		return metric, models.StatusBadRequest
 	}
 
-	if _, v := s.memStorage.GetItemGauge(metric.ID); metric.MType == models.Gauge {
+	if _, v := s.memStorage.GetItemGauge(metric.ID); metric.MType == models.Gauge && s.memStorage.CheckItemGauge(metric.ID) {
 		metric.Value = &v
 
 		return metric, models.StatusOK
-	} else if _, v := s.memStorage.GetItemCounter(metric.ID); metric.MType == models.Counter {
+	} else if _, v := s.memStorage.GetItemCounter(metric.ID); metric.MType == models.Counter && s.memStorage.CheckCounter(metric.ID) {
 
 		metric.Delta = &v
 
