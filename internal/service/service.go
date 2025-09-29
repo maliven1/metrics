@@ -51,7 +51,7 @@ func (s Service) GetStructMetric(metric models.Metrics) (models.Metrics, int) {
 		return metric, models.StatusBadRequest
 	}
 
-	if _, v := s.memStorage.GetItemGauge(metric.ID); metric.MType == models.Gauge && s.memStorage.CheckItemGauge(metric.ID) {
+	if _, v := s.memStorage.GetItemGauge(metric.ID); metric.MType == models.Gauge {
 		metric.Value = &v
 
 		return metric, models.StatusOK
