@@ -45,12 +45,15 @@ func (s Service) AddStructMetric(metric models.Metrics) int {
 }
 
 func (s Service) GetStructMetric(metric models.Metrics) (models.Metrics, int) {
+	if metric.ID == "" {
+		return metric, models.StatusBadRequest
+	}
 
-	if name, v := s.memStorage.GetItemGauge(metric.ID); metric.MType == models.Gauge && name != "" {
+	if _, v := s.memStorage.GetItemGauge(metric.ID); metric.MType == models.Gauge {
 		metric.Value = &v
 
 		return metric, models.StatusOK
-	} else if name, v := s.memStorage.GetItemCounter(metric.ID); metric.MType == models.Counter && name != "" {
+	} else if _, v := s.memStorage.GetItemCounter(metric.ID); metric.MType == models.Counter {
 
 		metric.Delta = &v
 
@@ -83,7 +86,7 @@ func (s Service) GetMetric(pathSplit []string) (string, int) {
 		return "", models.StatusNotFound
 	}
 	if name, v := s.memStorage.GetItemGauge(pathSplit[3]); pathSplit[2] == models.Gauge && name != "" {
-		metrics := fmt.Sprint(v)
+		metrics := strconv.FormatFloat(v, 'f', -1, 64)
 		return metrics, models.StatusOK
 	} else if name, v := s.memStorage.GetItemCounter(pathSplit[3]); pathSplit[2] == models.Counter && name != "" {
 		metrics := fmt.Sprint(v)
