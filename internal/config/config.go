@@ -24,7 +24,7 @@ type ServerConfig struct {
 }
 
 func ParseServerFlags() {
-	flag.StringVar(&flagServerRunAddr, "a", ":8080", "address and port to run server")
+	flag.StringVar(&flagServerRunAddr, "a", "localhost:8080", "address and port to run server")
 	flag.Parse()
 }
 func ParseAgentFlags() {
