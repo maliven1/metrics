@@ -2,6 +2,7 @@ package agenthandlers
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -105,13 +106,14 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger) {
 			}
 
 			request.Header.Set("content-type", "application/json")
+			request.Header.Add("Content-Encoding", "gzip")
 
 			response, err := client.Do(request)
 			if err != nil {
 				log.Info(err)
 				continue
 			}
-
+			response.Header.Set("Accept-Encoding", "gzip")
 			response.Body.Close()
 		}
 		for i, v := range Counter {
@@ -125,18 +127,24 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger) {
 				log.Info(err)
 			}
 			reader := bytes.NewReader(data)
-			request, err := http.NewRequest(http.MethodPost, endpoint, reader)
+			gz, err := gzip.NewReader(reader)
+			if err != nil {
+				log.Info(err)
+				return
+			}
+			request, err := http.NewRequest(http.MethodPost, endpoint, gz)
 			if err != nil {
 				log.Info(err)
 			}
 
 			request.Header.Set("content-type", "application/json")
-
+			request.Header.Add("Content-Encoding", "gzip")
 			response, err := client.Do(request)
 			if err != nil {
 				log.Info(err)
 				continue
 			}
+			response.Header.Set("Accept-Encoding", "gzip")
 			response.Body.Close()
 		}
 	}

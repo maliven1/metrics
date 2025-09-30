@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/maliven1/metrics/internal/config"
+	"github.com/maliven1/metrics/internal/handler/middlewares"
 	serverhandlers "github.com/maliven1/metrics/internal/handler/server_handlers"
 	"github.com/maliven1/metrics/internal/logger"
 	"github.com/maliven1/metrics/internal/repository"
@@ -28,11 +29,14 @@ func main() {
 	router := chi.NewRouter()
 	router.Group(func(r chi.Router) {
 		r.Use(logger.WithLogging)
+		r.Group(func(r chi.Router) {
+			r.Use(middlewares.GzipMiddleware)
+			r.Get(`/`, h.GetAllMetricsHandler())
+			r.Post(`/value/`, h.GetBodyMetricHandler(log))
+			r.Post(`/update/`, h.PostBodyHandler())
+		})
 		r.Post(`/update/*`, h.PostURLHandler())
-		r.Post(`/value/`, h.GetBodyMetricHandler(log))
-		r.Post(`/update/`, h.PostBodyHandler())
 		r.Get(`/value/*`, h.GetMetricHandler())
-		r.Get(`/`, h.GetAllMetricsHandler())
 
 	})
 	log.Info("serv start on ", cfg.Address, " time:", time.Now())
