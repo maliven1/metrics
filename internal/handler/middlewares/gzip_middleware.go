@@ -37,6 +37,7 @@ func GzipMiddleware(h http.Handler) http.Handler {
 			}
 			// меняем тело запроса на новое
 			r.Body = cr
+			defer r.Body.Close()
 			defer cr.Close()
 		}
 

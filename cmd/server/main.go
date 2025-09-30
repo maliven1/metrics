@@ -33,7 +33,7 @@ func main() {
 			r.Use(middlewares.GzipMiddleware)
 			r.Get(`/`, h.GetAllMetricsHandler())
 			r.Post(`/value/`, h.GetBodyMetricHandler(log))
-			r.Post(`/update/`, h.PostBodyHandler())
+			r.Post(`/update/`, h.PostBodyHandler(log))
 		})
 		r.Post(`/update/*`, h.PostURLHandler())
 		r.Get(`/value/*`, h.GetMetricHandler())

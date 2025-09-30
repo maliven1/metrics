@@ -48,7 +48,7 @@ func (s SendClient) SendClientMetrics() {
 				log.Println(err)
 			}
 
-			request.Header.Add("Content-Type", "Content-Type: text/plain")
+			request.Header.Set("Content-Type", "Content-Type: text/plain")
 
 			response, err := client.Do(request)
 			if err != nil {
@@ -69,7 +69,7 @@ func (s SendClient) SendClientMetrics() {
 				log.Println(err)
 			}
 
-			request.Header.Add("Content-Type", "Content-Type: text/plain")
+			request.Header.Set("Content-Type", "Content-Type: text/plain")
 
 			response, err := client.Do(request)
 			if err != nil {
@@ -98,22 +98,35 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger) {
 			if err != nil {
 				log.Info(err)
 			}
-			reader := bytes.NewReader(data)
 
-			request, err := http.NewRequest(http.MethodPost, endpoint, reader)
+			var buf bytes.Buffer
+			gzipWriter := gzip.NewWriter(&buf)
+
+			_, err = gzipWriter.Write(data)
+			if err != nil {
+				log.Info(err)
+				return
+			}
+			err = gzipWriter.Flush()
+			if err != nil {
+				log.Info(err)
+				return
+			}
+			_ = gzipWriter.Close()
+			request, err := http.NewRequest(http.MethodPost, endpoint, &buf)
 			if err != nil {
 				log.Info(err)
 			}
 
 			request.Header.Set("content-type", "application/json")
-			request.Header.Add("Content-Encoding", "gzip")
+			request.Header.Set("Content-Encoding", "gzip")
+			request.Header.Set("Accept-Encoding", "gzip")
 
 			response, err := client.Do(request)
 			if err != nil {
 				log.Info(err)
 				continue
 			}
-			response.Header.Set("Accept-Encoding", "gzip")
 			response.Body.Close()
 		}
 		for i, v := range Counter {
@@ -126,25 +139,36 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger) {
 			if err != nil {
 				log.Info(err)
 			}
-			reader := bytes.NewReader(data)
-			gz, err := gzip.NewReader(reader)
+
+			var buf bytes.Buffer
+
+			gzipWriter := gzip.NewWriter(&buf)
+
+			_, err = gzipWriter.Write(data)
 			if err != nil {
 				log.Info(err)
 				return
 			}
-			request, err := http.NewRequest(http.MethodPost, endpoint, gz)
+
+			err = gzipWriter.Flush()
+			if err != nil {
+				log.Info(err)
+				return
+			}
+			_ = gzipWriter.Close()
+			request, err := http.NewRequest(http.MethodPost, endpoint, &buf)
 			if err != nil {
 				log.Info(err)
 			}
 
 			request.Header.Set("content-type", "application/json")
-			request.Header.Add("Content-Encoding", "gzip")
+			request.Header.Set("Content-Encoding", "gzip")
+			request.Header.Set("Accept-Encoding", "gzip")
 			response, err := client.Do(request)
 			if err != nil {
 				log.Info(err)
 				continue
 			}
-			response.Header.Set("Accept-Encoding", "gzip")
 			response.Body.Close()
 		}
 	}
