@@ -112,7 +112,6 @@ func (s Service) WriteFileMetrics(cfg config.ServerConfig, log *zap.SugaredLogge
 					log.Error(err)
 					continue
 				}
-				log.Info(metrics)
 			}
 
 		}
@@ -126,7 +125,6 @@ func (s Service) WriteFileMetrics(cfg config.ServerConfig, log *zap.SugaredLogge
 					log.Error(err)
 					continue
 				}
-				log.Info(metrics)
 			}
 		}
 		Producer.Close()
