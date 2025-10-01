@@ -25,8 +25,8 @@ func main() {
 	cache := repository.NewCache(memStorage)
 	service := service.NewService(cache)
 	h := serverhandlers.NewAddHandler(service)
-	service.ReadFileMetrics(*cfg, log)
-	go service.WriteFileMetrics(*cfg, log)
+
+	go service.InitFile(*cfg, log)
 
 	router := chi.NewRouter()
 	router.Group(func(r chi.Router) {
