@@ -24,9 +24,9 @@ type AgentConfig struct {
 
 type ServerConfig struct {
 	Address         string `env:"ADDRESS"`
-	StoreInterval   int    `env:STORE_INTERVAL`
-	FileStoragePath string `env:FILE_STORAGE_PATH`
-	Restore         bool   `env:RESTORE`
+	StoreInterval   int    `env:"STORE_INTERVAL"`
+	FileStoragePath string `env:"FILE_STORAGE_PATH"`
+	Restore         bool   `env:"RESTORE"`
 }
 
 func ParseServerFlags() {

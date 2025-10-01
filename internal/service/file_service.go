@@ -133,3 +133,8 @@ func (s Service) WriteFileMetrics(cfg config.ServerConfig, log *zap.SugaredLogge
 	}
 
 }
+
+func (s Service) InitFile(cfg config.ServerConfig, log *zap.SugaredLogger) {
+	s.ReadFileMetrics(cfg, log)
+	s.WriteFileMetrics(cfg, log)
+}
