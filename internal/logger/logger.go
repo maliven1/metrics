@@ -7,9 +7,6 @@ import (
 	"go.uber.org/zap"
 )
 
-var sugar zap.SugaredLogger
-var Log *zap.Logger = zap.NewNop()
-
 type (
 	// берём структуру для хранения сведений об ответе
 	responseData struct {
@@ -37,19 +34,18 @@ func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 	r.responseData.status = statusCode // захватываем код статуса
 }
 
-func Initialize() *zap.SugaredLogger {
+func Initialize() (*zap.SugaredLogger, error) {
 	logger, err := zap.NewDevelopment()
 	if err != nil {
-		// вызываем панику, если ошибка
-		panic(err)
+		return nil, err
 	}
-	defer logger.Sync()
 
 	// делаем регистратор SugaredLogger
-	sugar = *logger.Sugar()
-	return &sugar
+	sugar := logger.Sugar()
+	return sugar, nil
 }
-func WithLogging(h http.Handler) http.Handler {
+
+func WithLogging(h http.Handler, log *zap.SugaredLogger) http.Handler {
 	logFn := func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
@@ -65,7 +61,7 @@ func WithLogging(h http.Handler) http.Handler {
 
 		duration := time.Since(start)
 
-		sugar.Infoln(
+		log.Infoln(
 			"uri", r.RequestURI,
 			"method", r.Method,
 			"status", responseData.status, // получаем перехваченный код статуса ответа

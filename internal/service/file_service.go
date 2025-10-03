@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"time"
@@ -44,7 +45,7 @@ type Consumer struct {
 func NewConsumer(fileName string) (*Consumer, error) {
 	file, err := os.OpenFile(fileName, os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
 
 	return &Consumer{
@@ -56,7 +57,7 @@ func NewConsumer(fileName string) (*Consumer, error) {
 func (c *Consumer) ReadMetric() (*models.Metrics, error) {
 	metric := &models.Metrics{}
 	if err := c.decoder.Decode(&metric); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to decode metric: %w", err)
 	}
 
 	return metric, nil

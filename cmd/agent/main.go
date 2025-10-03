@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/maliven1/metrics/internal/agent"
 	"github.com/maliven1/metrics/internal/config"
 	agenthandlers "github.com/maliven1/metrics/internal/handler/agent_handlers"
@@ -10,7 +12,13 @@ import (
 )
 
 func main() {
-	log := logger.Initialize()
+	log, err := logger.Initialize()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer log.Sync()
+
 	cfg := config.NewEnvAgentConfig()
 	memStorage := storage.NewMemStorage()
 	cache := repository.NewCache(memStorage)
@@ -18,6 +26,5 @@ func main() {
 	client := agenthandlers.NewSendClient(service, cfg)
 
 	client.SendClientJSONMetrics(log)
-	//client.SendClientMetrics()
 
 }
