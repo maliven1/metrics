@@ -3,7 +3,6 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"time"
 
@@ -81,11 +80,9 @@ func (s Service) ReadFileMetrics(cfg config.ServerConfig, log *zap.SugaredLogger
 	for {
 		metrics, err := Consumer.ReadMetric()
 		if err != nil {
-			if err == io.EOF {
-				break
-			}
+
 			log.Error(err)
-			continue
+			return
 		}
 		s.AddStructMetric(*metrics)
 	}
