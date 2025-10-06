@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -21,6 +22,7 @@ import (
 
 func Run() {
 	cfg := config.NewEnvServerConfig()
+	log.Println("!!!!!!!!!!!!!!DEBUG!!!!!!!!!!!!!!!!!!!!", cfg.PostgreDNS)
 	log, err := logger.Initialize()
 	if err != nil {
 		fmt.Println(err)

@@ -2,7 +2,6 @@ package storage
 
 import (
 	"database/sql"
-	"log"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/maliven1/metrics/internal/config"
@@ -13,7 +12,7 @@ type PostgreDB struct {
 }
 
 func NewPostgreDB(cfg config.ServerConfig) (*PostgreDB, error) {
-	log.Println("!!!!!!!!!!debug log!!!!!!!!!!!!: ", cfg.PostgreDNS)
+
 	db, err := sql.Open("pgx", cfg.PostgreDNS)
 	if err != nil {
 		return nil, err
