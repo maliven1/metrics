@@ -1,6 +1,6 @@
 module github.com/maliven1/metrics
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/caarlos0/env/v6 v6.10.1
@@ -12,5 +12,6 @@ require (
 
 require (
 	github.com/ajg/form v1.5.1 // indirect
+	github.com/stretchr/testify v1.9.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 )

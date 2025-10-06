@@ -35,10 +35,10 @@ func (s SendClient) SendClientMetrics() {
 	go s.AddHandler.CollectMetrics()
 	for {
 		time.Sleep(time.Duration(s.cfg.ReportInterval) * time.Second)
-		Gauge, Counter := s.AddHandler.GetMetrics()
-		for i, v := range Gauge {
+		gauge, counter := s.AddHandler.GetMetrics()
+		for i, v := range gauge {
 			if i == "" {
-				continue
+				return
 			}
 
 			data, _ := url.JoinPath(models.Gauge, i, fmt.Sprint(v))
@@ -46,6 +46,7 @@ func (s SendClient) SendClientMetrics() {
 			request, err := http.NewRequest(http.MethodPost, endpoint+data, nil)
 			if err != nil {
 				log.Println(err)
+				return
 			}
 
 			request.Header.Set("Content-Type", "Content-Type: text/plain")
@@ -53,13 +54,14 @@ func (s SendClient) SendClientMetrics() {
 			response, err := client.Do(request)
 			if err != nil {
 				log.Println(err)
+				continue
 			}
 
-			response.Body.Close()
+			defer response.Body.Close()
 		}
-		for i, v := range Counter {
+		for i, v := range counter {
 			if i == "" {
-				continue
+				return
 			}
 
 			data, _ := url.JoinPath(models.Counter, i, fmt.Sprint(v))
@@ -67,6 +69,7 @@ func (s SendClient) SendClientMetrics() {
 			request, err := http.NewRequest(http.MethodPost, endpoint+data, nil)
 			if err != nil {
 				log.Println(err)
+				return
 			}
 
 			request.Header.Set("Content-Type", "Content-Type: text/plain")
@@ -74,29 +77,32 @@ func (s SendClient) SendClientMetrics() {
 			response, err := client.Do(request)
 			if err != nil {
 				log.Println(err)
+				continue
 			}
-			response.Body.Close()
+			defer response.Body.Close()
 		}
 	}
 }
 
 func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger) {
+
 	endpoint := "http://" + s.cfg.Address + "/update/"
 	log.Info("start agent on endpoint: ", endpoint)
 	client := &http.Client{}
 	go s.AddHandler.CollectMetrics()
 	for {
 		time.Sleep(time.Duration(s.cfg.ReportInterval) * time.Second)
-		Gauge, Counter := s.AddHandler.GetMetrics()
-		for i, v := range Gauge {
+		gauge, counter := s.AddHandler.GetMetrics()
+		for i, v := range gauge {
 			if i == "" {
-				continue
+				return
 			}
 
 			metric := models.Metrics{MType: models.Gauge, ID: i, Value: &v}
 			data, err := json.Marshal(metric)
 			if err != nil {
-				log.Info(err)
+				log.Error(err)
+				return
 			}
 
 			var buf bytes.Buffer
@@ -127,17 +133,18 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger) {
 				log.Info(err)
 				continue
 			}
-			response.Body.Close()
+			defer response.Body.Close()
 		}
-		for i, v := range Counter {
+		for i, v := range counter {
 			if i == "" {
-				continue
+				return
 			}
 
 			metric := models.Metrics{MType: models.Counter, ID: i, Delta: &v}
 			data, err := json.Marshal(metric)
 			if err != nil {
 				log.Info(err)
+				return
 			}
 
 			var buf bytes.Buffer
@@ -159,6 +166,7 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger) {
 			request, err := http.NewRequest(http.MethodPost, endpoint, &buf)
 			if err != nil {
 				log.Info(err)
+				return
 			}
 
 			request.Header.Set("content-type", "application/json")
@@ -169,7 +177,7 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger) {
 				log.Info(err)
 				continue
 			}
-			response.Body.Close()
+			defer response.Body.Close()
 		}
 	}
 }
