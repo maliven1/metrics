@@ -14,6 +14,7 @@ var (
 	storeInterval     int
 	fileStoragePath   string
 	restore           bool
+	postgreDNS        int
 )
 
 type AgentConfig struct {
@@ -27,6 +28,7 @@ type ServerConfig struct {
 	StoreInterval   int    `env:"STORE_INTERVAL"`
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 	Restore         bool   `env:"RESTORE"`
+	PostgreDNS      int    `env:"POSTGRES_DNS"`
 }
 
 func parseServerFlags() {
@@ -34,6 +36,7 @@ func parseServerFlags() {
 	flag.IntVar(&storeInterval, "i", 300, "the time interval after which the current server readings are saved")
 	flag.StringVar(&fileStoragePath, "f", "history", "path to the file where the current values are saved")
 	flag.BoolVar(&restore, "r", false, "determines whether previously saved values from the specified file should be loaded when the server starts")
+	flag.IntVar(&postgreDNS, "d", 5432, "postgres DNS")
 	flag.Parse()
 }
 func parseAgentFlags() {
@@ -60,6 +63,9 @@ func NewEnvServerConfig() *ServerConfig {
 	}
 	if !cfg.Restore {
 		cfg.Restore = restore
+	}
+	if cfg.PostgreDNS == 0 {
+		cfg.PostgreDNS = postgreDNS
 	}
 	return &cfg
 

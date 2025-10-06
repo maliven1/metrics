@@ -1,14 +1,7 @@
 package serverhandlers
 
 import (
-	"bytes"
-	"encoding/json"
-	"net/http"
-	"strings"
-
-	"github.com/go-chi/render"
 	models "github.com/maliven1/metrics/internal/model"
-	"go.uber.org/zap"
 )
 
 type Service interface {
@@ -19,128 +12,15 @@ type Service interface {
 	GetStructMetric(metric models.Metrics) (models.Metrics, int)
 }
 
-type AddHandler struct {
-	AddHandler Service
+type PostgreService interface {
+	CheckConnection() int
 }
 
-func NewAddHandler(s Service) *AddHandler {
-	return &AddHandler{AddHandler: s}
+type Handler struct {
+	Handler        Service
+	PostgreHandler PostgreService
 }
 
-func (h AddHandler) GetBodyMetricHandler(log *zap.SugaredLogger) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-
-		w.Header().Set("content-type", "application/json")
-		var buf bytes.Buffer
-		var metric models.Metrics
-		_, err := buf.ReadFrom(r.Body)
-		if err != nil {
-
-			w.WriteHeader(models.StatusBadRequest)
-			return
-		}
-		if err = json.Unmarshal(buf.Bytes(), &metric); err != nil {
-
-			w.WriteHeader(models.StatusBadRequest)
-			return
-		}
-		res, status := h.AddHandler.GetStructMetric(metric)
-		resp, err := json.Marshal(res)
-		if err != nil {
-			log.Error("Marshal err: ", err, "status code: ", models.StatusInternalServerError)
-			w.WriteHeader(models.StatusInternalServerError)
-			return
-		}
-		if status == models.StatusOK {
-			w.WriteHeader(status)
-
-			w.Write(resp)
-
-			return
-		}
-		w.WriteHeader(status)
-		w.Write(resp)
-	}
-}
-
-func (h AddHandler) PostBodyHandler(log *zap.SugaredLogger) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("content-type", "application/json")
-		var buf bytes.Buffer
-		var metric models.Metrics
-		_, err := buf.ReadFrom(r.Body)
-		if err != nil {
-
-			w.WriteHeader(models.StatusBadRequest)
-
-			return
-		}
-		if err = json.Unmarshal(buf.Bytes(), &metric); err != nil {
-
-			w.WriteHeader(models.StatusBadRequest)
-
-			return
-		}
-		status := h.AddHandler.AddStructMetric(metric)
-		resp, err := json.Marshal(metric)
-		if err != nil {
-			log.Error("Marshal err: ", err, "status code: ", models.StatusInternalServerError)
-			w.WriteHeader(models.StatusInternalServerError)
-			return
-		}
-		w.WriteHeader(status)
-		w.Write(resp)
-
-	}
-}
-
-func (h AddHandler) PostURLHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-
-		pathSplit := strings.Split(r.URL.Path, "/")
-		status := h.AddHandler.CheckAddPath(pathSplit)
-		w.WriteHeader(status)
-		w.Header().Set("content-type", "text/plain")
-		w.Header().Add("content-type", "charset=utf-8")
-	}
-}
-
-func (h AddHandler) GetMetricHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("content-type", "text/plain")
-		w.Header().Add("content-type", "charset=utf-8")
-		pathSplit := strings.Split(r.URL.Path, "/")
-		metrics, status := h.AddHandler.GetMetric(pathSplit)
-		if status == models.StatusOK {
-			w.WriteHeader(status)
-
-			render.PlainText(w, r, metrics)
-
-			return
-		}
-		w.WriteHeader(status)
-
-	}
-}
-func (h AddHandler) GetAllMetricsHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("content-type", "text/html")
-		w.Header().Add("content-type", "charset=utf-8")
-		count, gauge := h.AddHandler.GetAllMetrics()
-		jsonCount, err := json.Marshal(count)
-		if err != nil {
-			w.WriteHeader(500)
-			return
-		}
-		jsonGauge, err := json.Marshal(gauge)
-		if err != nil {
-			w.WriteHeader(500)
-			return
-		}
-		str := string(jsonCount) + string(jsonGauge)
-		w.WriteHeader(models.StatusOK)
-
-		render.HTML(w, r, str)
-
-	}
+func NewHandler(s Service, p PostgreService) *Handler {
+	return &Handler{Handler: s, PostgreHandler: p}
 }

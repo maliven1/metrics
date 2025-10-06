@@ -13,7 +13,7 @@ func TestService_CheckAddPath(t *testing.T) {
 	defer ctrl.Finish()
 
 	m := mock_service.NewMockMemStorage(ctrl)
-	s := Service{memStorage: m}
+	s := MemService{memStorage: m}
 
 	m.EXPECT().SetGauge("SomeMetcrics", 321.0).Times(1)
 
@@ -144,7 +144,7 @@ func TestService_GetMetric(t *testing.T) {
 			defer ctrl.Finish()
 
 			m := mock_service.NewMockMemStorage(ctrl)
-			s := Service{memStorage: m}
+			s := MemService{memStorage: m}
 
 			tt.setupMock(m)
 

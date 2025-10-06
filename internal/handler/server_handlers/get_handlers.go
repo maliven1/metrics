@@ -1,0 +1,102 @@
+package serverhandlers
+
+import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"strings"
+
+	"github.com/go-chi/render"
+	models "github.com/maliven1/metrics/internal/model"
+	"go.uber.org/zap"
+)
+
+func (h Handler) GetBodyMetricHandler(log *zap.SugaredLogger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("content-type", "application/json")
+		var buf bytes.Buffer
+		var metric models.Metrics
+		_, err := buf.ReadFrom(r.Body)
+		if err != nil {
+
+			w.WriteHeader(models.StatusBadRequest)
+			return
+		}
+		if err = json.Unmarshal(buf.Bytes(), &metric); err != nil {
+
+			w.WriteHeader(models.StatusBadRequest)
+			return
+		}
+		res, status := h.Handler.GetStructMetric(metric)
+		resp, err := json.Marshal(res)
+		if err != nil {
+			log.Error("Marshal err: ", err, "status code: ", models.StatusInternalServerError)
+			w.WriteHeader(models.StatusInternalServerError)
+			return
+		}
+		if status == models.StatusOK {
+			w.WriteHeader(status)
+
+			w.Write(resp)
+
+			return
+		}
+		w.WriteHeader(status)
+		w.Write(resp)
+	}
+}
+func (h Handler) GetMetricHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("content-type", "text/plain")
+		w.Header().Add("content-type", "charset=utf-8")
+		pathSplit := strings.Split(r.URL.Path, "/")
+		metrics, status := h.Handler.GetMetric(pathSplit)
+		if status == models.StatusOK {
+			w.WriteHeader(status)
+
+			render.PlainText(w, r, metrics)
+
+			return
+		}
+		w.WriteHeader(status)
+
+	}
+}
+
+func (h Handler) GetAllMetricsHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("content-type", "text/html")
+		w.Header().Add("content-type", "charset=utf-8")
+		count, gauge := h.Handler.GetAllMetrics()
+		jsonCount, err := json.Marshal(count)
+		if err != nil {
+			w.WriteHeader(500)
+			return
+		}
+		jsonGauge, err := json.Marshal(gauge)
+		if err != nil {
+			w.WriteHeader(500)
+			return
+		}
+		str := string(jsonCount) + string(jsonGauge)
+		w.WriteHeader(models.StatusOK)
+
+		render.HTML(w, r, str)
+
+	}
+}
+
+func (h Handler) PingHandler(log *zap.SugaredLogger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("content-type", "text/plain")
+		status := h.PostgreHandler.CheckConnection()
+		if status == models.StatusInternalServerError {
+			log.Error("status cod: ", status, "ping postgreDB failed")
+			w.WriteHeader(status)
+			return
+		}
+
+		w.WriteHeader(status)
+	}
+}
