@@ -21,12 +21,6 @@ func NewPostgreDB(cfg config.ServerConfig) (*PostgreDB, error) {
 		return nil, err
 	}
 
-	err = db.Ping()
-	if err != nil {
-		db.Close()
-		return nil, err
-	}
-
 	return &PostgreDB{DB: db}, nil
 }
 
