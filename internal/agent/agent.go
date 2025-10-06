@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/maliven1/metrics/internal/config"
 	models "github.com/maliven1/metrics/internal/model"
 )
 
@@ -18,10 +19,11 @@ type MemStorage interface {
 
 type Agent struct {
 	memStorage MemStorage
+	cfg        *config.AgentConfig
 }
 
-func NewAgent(m MemStorage) *Agent {
-	return &Agent{memStorage: m}
+func NewAgent(m MemStorage, cfg *config.AgentConfig) *Agent {
+	return &Agent{memStorage: m, cfg: cfg}
 }
 
 func (a Agent) GetMetrics() (map[string]float64, map[string]int64) {
@@ -31,7 +33,7 @@ func (a Agent) GetMetrics() (map[string]float64, map[string]int64) {
 func (a Agent) CollectMetrics() {
 	for {
 		a.addMetrics()
-		time.Sleep(time.Duration(models.PollInterval) * time.Second)
+		time.Sleep(time.Duration(a.cfg.PollInterval) * time.Second)
 	}
 
 }
@@ -59,8 +61,8 @@ func (a Agent) addMetrics() {
 	a.memStorage.SetGauge(models.MSpanInuse, float64(mem.MSpanInuse))
 	a.memStorage.SetGauge(models.MSpanSys, float64(mem.MSpanSys))
 	a.memStorage.SetGauge(models.Mallocs, float64(mem.Mallocs))
-	a.memStorage.SetGauge(models.NumForcedGC, float64(mem.NextGC))
-	a.memStorage.SetGauge(models.NumForcedGC, float64(mem.NextGC))
+	a.memStorage.SetGauge(models.NextGC, float64(mem.NextGC))
+	a.memStorage.SetGauge(models.NumForcedGC, float64(mem.NumForcedGC))
 	a.memStorage.SetGauge(models.NumGC, float64(mem.NumGC))
 	a.memStorage.SetGauge(models.OtherSys, float64(mem.OtherSys))
 	a.memStorage.SetGauge(models.PauseTotalNs, float64(mem.PauseTotalNs))
@@ -69,8 +71,8 @@ func (a Agent) addMetrics() {
 	a.memStorage.SetGauge(models.Sys, float64(mem.Sys))
 	a.memStorage.SetGauge(models.TotalAlloc, float64(mem.TotalAlloc))
 	a.memStorage.SetGauge(models.RandomValue, rand.Float64())
-	if a.memStorage.AddCounter(models.Counter, count) {
+	if a.memStorage.AddCounter(models.PollCount, count) {
 		return
 	}
-	a.memStorage.SetCounter(models.Counter, count)
+	a.memStorage.SetCounter(models.PollCount, count)
 }

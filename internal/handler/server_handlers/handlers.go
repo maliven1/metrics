@@ -1,18 +1,22 @@
 package serverhandlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"strings"
 
 	"github.com/go-chi/render"
 	models "github.com/maliven1/metrics/internal/model"
+	"go.uber.org/zap"
 )
 
 type Service interface {
 	CheckAddPath(pathSplit []string) int
 	GetMetric(pathSplit []string) (string, int)
 	GetAllMetrics() (map[string]int64, map[string]float64)
+	AddStructMetric(metric models.Metrics) int
+	GetStructMetric(metric models.Metrics) (models.Metrics, int)
 }
 
 type AddHandler struct {
@@ -23,7 +27,74 @@ func NewAddHandler(s Service) *AddHandler {
 	return &AddHandler{AddHandler: s}
 }
 
-func (h AddHandler) PostHandler() http.HandlerFunc {
+func (h AddHandler) GetBodyMetricHandler(log *zap.SugaredLogger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("content-type", "application/json")
+		var buf bytes.Buffer
+		var metric models.Metrics
+		_, err := buf.ReadFrom(r.Body)
+		if err != nil {
+
+			w.WriteHeader(models.StatusBadRequest)
+			return
+		}
+		if err = json.Unmarshal(buf.Bytes(), &metric); err != nil {
+
+			w.WriteHeader(models.StatusBadRequest)
+			return
+		}
+		res, status := h.AddHandler.GetStructMetric(metric)
+		resp, err := json.Marshal(res)
+		if err != nil {
+			log.Error("Marshal err: ", err, "status code: ", models.StatusInternalServerError)
+			w.WriteHeader(models.StatusInternalServerError)
+			return
+		}
+		if status == models.StatusOK {
+			w.WriteHeader(status)
+
+			w.Write(resp)
+
+			return
+		}
+		w.WriteHeader(status)
+		w.Write(resp)
+	}
+}
+
+func (h AddHandler) PostBodyHandler(log *zap.SugaredLogger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("content-type", "application/json")
+		var buf bytes.Buffer
+		var metric models.Metrics
+		_, err := buf.ReadFrom(r.Body)
+		if err != nil {
+
+			w.WriteHeader(models.StatusBadRequest)
+
+			return
+		}
+		if err = json.Unmarshal(buf.Bytes(), &metric); err != nil {
+
+			w.WriteHeader(models.StatusBadRequest)
+
+			return
+		}
+		status := h.AddHandler.AddStructMetric(metric)
+		resp, err := json.Marshal(metric)
+		if err != nil {
+			log.Error("Marshal err: ", err, "status code: ", models.StatusInternalServerError)
+			w.WriteHeader(models.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(status)
+		w.Write(resp)
+
+	}
+}
+
+func (h AddHandler) PostURLHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		pathSplit := strings.Split(r.URL.Path, "/")
