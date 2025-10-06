@@ -28,7 +28,7 @@ type ServerConfig struct {
 	StoreInterval   int    `env:"STORE_INTERVAL"`
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 	Restore         bool   `env:"RESTORE"`
-	PostgreDNS      string `env:"POSTGRES_DNS"`
+	PostgreDNS      string `env:"DATABASE_DSN"`
 }
 
 func parseServerFlags() {
