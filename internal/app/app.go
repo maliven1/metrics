@@ -28,15 +28,17 @@ func Run() {
 	}
 	defer log.Sync()
 
-	postgreStorage, err := storage.NewPostgreDB(*cfg)
+	postgreStorage, err := storage.NewPostgreDB(*cfg, log)
 	if err != nil {
 		fmt.Println(err)
-		return
+
 	}
-	memStorage := storage.NewMemStorage()
+
 	posrgreRepo := repository.NewPostgreDB(postgreStorage)
-	cache := repository.NewCache(memStorage)
 	postgreService := service.NewPostgreService(posrgreRepo)
+	memStorage := storage.NewMemStorage()
+	cache := repository.NewCache(memStorage)
+
 	service := service.NewService(cache)
 	h := serverhandlers.NewHandler(service, postgreService)
 
