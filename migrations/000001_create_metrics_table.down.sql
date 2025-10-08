@@ -2,3 +2,4 @@
 -- Откат создания таблицы 
 DROP INDEX IF EXISTS idx_gauge;
 DROP INDEX IF EXISTS idx_count;
+DROP TABLE IF EXISTS metrics;
