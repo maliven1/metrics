@@ -2,14 +2,14 @@
 -- Создание таблицы метрик
 CREATE TABLE metrics (
     id SERIAL PRIMARY KEY,
-    gauge_name varchar(255),
-    gauge_value double precision ,
-    count_name varchar(255),
-    count_value INTEGER 
+    gauge varchar(255) UNIQUE,
+    gauge_value double precision NOT NULL DEFAULT 0.0,
+    count varchar(255) UNIQUE,
+    count_value INTEGER NOT NULL DEFAULT 0 
 ); 
 
 -- Базовый индекс для поиска gauge_name 
-CREATE INDEX idx_gauge_name ON metrics(gauge_name);
+CREATE INDEX idx_gauge ON metrics(gauge);
 
 -- Индекс для поиска count_value
-CREATE INDEX idx_count_value ON metrics(count_name);
+CREATE INDEX idx_count ON metrics(count);
