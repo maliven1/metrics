@@ -130,6 +130,9 @@ func (s MemService) WriteFileMetrics(cfg config.ServerConfig, log *zap.SugaredLo
 }
 
 func (s MemService) InitFile(cfg config.ServerConfig, log *zap.SugaredLogger) {
+	if cfg.FileStoragePath == "" {
+		return
+	}
 	s.ReadFileMetrics(cfg, log)
 	s.WriteFileMetrics(cfg, log)
 }
