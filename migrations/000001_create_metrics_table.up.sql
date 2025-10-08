@@ -8,8 +8,8 @@ CREATE TABLE metrics (
     count_value INTEGER 
 ); 
 
--- Базовый индекс для поиска по gauge
-CREATE INDEX idx_gauge_name ON gauge_name(name);
+-- Базовый индекс для поиска gauge_name 
+CREATE INDEX idx_gauge_name ON metrics(gauge_name);
 
--- Индекс для поиска по counter
-CREATE INDEX idx_count_value ON count_value(year);
+-- Индекс для поиска count_value
+CREATE INDEX idx_count_value ON metrics(count_name);
