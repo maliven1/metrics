@@ -28,7 +28,7 @@ func Run() {
 	}
 	defer log.Sync()
 
-	postgreStorage, err := storage.NewPostgreDB(*cfg, log)
+	postgreStorage, err := storage.NewPostgreDB(*cfg)
 	if err != nil {
 		fmt.Println(err)
 
