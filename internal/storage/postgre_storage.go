@@ -22,12 +22,12 @@ func NewPostgreDB(cfg config.ServerConfig, log *zap.SugaredLogger) (*PostgreDB, 
 	}
 	db, err := sql.Open("pgx", cfg.PostgreDNS)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to open database: %v", err)
 	}
 	err = UpMigrations(db, log)
 	if err != nil {
 
-		return nil, err
+		return nil, fmt.Errorf("Failed to apply migrations: %v", err)
 	}
 	return &PostgreDB{DB: db}, nil
 }

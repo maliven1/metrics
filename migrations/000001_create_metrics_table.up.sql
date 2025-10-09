@@ -2,10 +2,10 @@
 -- Создание таблицы метрик
 CREATE TABLE metrics (
     id SERIAL PRIMARY KEY,
-    gauge TEXT  UNIQUE,
-    gauge_value double precision ,
-    count TEXT  UNIQUE,
-    count_value BIGINT  
+    gauge varchar(255) ,
+    gauge_value double precision  ,
+    count varchar(255) ,
+    count_value BIGINT 
 ); 
 
 -- Базовый индекс для поиска gauge_name 
