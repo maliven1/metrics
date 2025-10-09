@@ -3,9 +3,9 @@
 CREATE TABLE metrics (
     id SERIAL PRIMARY KEY,
     gauge varchar(255) UNIQUE,
-    gauge_value double precision NOT NULL ,
+    gauge_value double precision ,
     count varchar(255) UNIQUE,
-    count_value INTEGER NOT NULL  
+    count_value BIGINT  
 ); 
 
 -- Базовый индекс для поиска gauge_name 
