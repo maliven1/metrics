@@ -2,9 +2,9 @@
 -- Создание таблицы метрик
 CREATE TABLE metrics (
     id SERIAL PRIMARY KEY,
-    gauge varchar(255) UNIQUE,
+    gauge TEXT  UNIQUE,
     gauge_value double precision ,
-    count varchar(255) UNIQUE,
+    count TEXT  UNIQUE,
     count_value BIGINT  
 ); 
 
