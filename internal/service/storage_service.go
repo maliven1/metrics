@@ -22,7 +22,3 @@ func (s *PostgreService) CheckConnection() int {
 	}
 	return models.StatusOK
 }
-
-func (p *PostgreService, s MemService) WriteMetrics() {
-
-}
