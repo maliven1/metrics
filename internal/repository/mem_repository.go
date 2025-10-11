@@ -17,14 +17,14 @@ func (c *Storage) CheckItemGauge(key string) bool {
 }
 
 func (c *Storage) SetGauge(key string, value float64) {
-	if c.postgre != nil {
+	if err := c.postgre.CheckConnection(); err != nil {
 		c.postgre.SetGauge(key, value)
 	}
 	c.cache.SetGauge(key, value)
 }
 
 func (c *Storage) SetCounter(key string, value int64) {
-	if c.postgre != nil {
+	if err := c.postgre.CheckConnection(); err != nil {
 		c.postgre.SetCounter(key, value)
 	}
 	c.cache.SetCounter(key, value)
@@ -47,7 +47,7 @@ func (c *Storage) GetCounter() map[string]int64 {
 }
 
 func (c *Storage) AddCounter(key string, value int64) bool {
-	if c.postgre != nil {
+	if err := c.postgre.CheckConnection(); err != nil {
 		c.postgre.AddCounter(key, value)
 	}
 	return c.cache.AddCounter(key, value)

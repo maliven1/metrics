@@ -84,50 +84,6 @@ func (db *PostgreDB) SetCounter(key string, value int64) {
 	}
 }
 
-func (db *PostgreDB) GetGauge() map[string]float64 {
-	rows, err := db.DB.Query("SELECT gauge, gauge_value FROM metrics WHERE gauge IS NOT NULL AND gauge != ''")
-	if err != nil {
-
-		return make(map[string]float64)
-	}
-	defer rows.Close()
-
-	gauge := make(map[string]float64)
-	for rows.Next() {
-		var key string
-		var value float64
-		if err := rows.Scan(&key, &value); err != nil {
-
-			continue
-		}
-		gauge[key] = value
-	}
-
-	return gauge
-}
-
-func (db *PostgreDB) GetCounter() map[string]int64 {
-	rows, err := db.DB.Query("SELECT count, count_value FROM metrics WHERE count IS NOT NULL AND count != ''")
-	if err != nil {
-
-		return make(map[string]int64)
-	}
-	defer rows.Close()
-
-	counter := make(map[string]int64)
-	for rows.Next() {
-		var key string
-		var value int64
-		if err := rows.Scan(&key, &value); err != nil {
-
-			continue
-		}
-		counter[key] = value
-	}
-
-	return counter
-}
-
 func (db *PostgreDB) AddCounter(key string, value int64) bool {
 	var exists bool
 	err := db.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM metrics WHERE count = $1)", key).Scan(&exists)
