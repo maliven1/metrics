@@ -17,28 +17,12 @@ func (c *Storage) CheckItemGauge(key string) bool {
 }
 
 func (c *Storage) SetGauge(key string, value float64) {
-	// Check if PostgreSQL is available
-	if c.postgre != nil {
-		if err := c.postgre.CheckConnection(); err == nil {
-			// PostgreSQL is available, write to it
-			c.postgre.SetGauge(key, value)
 
-		}
-	}
-	// Fallback to memory storage
 	c.cache.SetGauge(key, value)
 }
 
 func (c *Storage) SetCounter(key string, value int64) {
-	// Check if PostgreSQL is available
-	if c.postgre != nil {
-		if err := c.postgre.CheckConnection(); err == nil {
-			// PostgreSQL is available, write to it
-			c.postgre.SetCounter(key, value)
 
-		}
-	}
-	// Fallback to memory storage
 	c.cache.SetCounter(key, value)
 }
 
@@ -57,13 +41,6 @@ func (c *Storage) GetCounter() map[string]int64 {
 }
 
 func (c *Storage) AddCounter(key string, value int64) bool {
-	// Check if PostgreSQL is available
-	if c.postgre != nil {
-		if err := c.postgre.CheckConnection(); err == nil {
-			// PostgreSQL is available, write to it
-			c.postgre.AddCounter(key, value)
-		}
-	}
-	// Fallback to memory storage
+
 	return c.cache.AddCounter(key, value)
 }
