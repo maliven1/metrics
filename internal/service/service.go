@@ -3,6 +3,9 @@ package service
 type PostgreRepo interface {
 	Close() error
 	CheckConnection() error
+	SetGauge(key string, value float64)
+	SetCounter(key string, value int64)
+	AddCounter(key string, value int64) bool
 }
 
 type MemRepo interface {
