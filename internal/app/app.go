@@ -34,12 +34,10 @@ func Run() {
 
 	}
 
-	posrgreRepo := repository.NewPostgreDB(postgreStorage)
-	postgreService := service.NewPostgreService(posrgreRepo)
 	memStorage := storage.NewMemStorage()
-	cache := repository.NewCache(memStorage)
-
-	service := service.NewService(cache)
+	repo := repository.NewCache(memStorage, postgreStorage)
+	postgreService := service.NewPostgreService(repo)
+	service := service.NewService(repo)
 	h := serverhandlers.NewHandler(service, postgreService)
 
 	go service.InitFile(*cfg, log)

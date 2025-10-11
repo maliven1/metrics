@@ -1,23 +1,10 @@
 package repository
 
-type PostgreMethods interface {
-	Close() error
-	CheckConnection() error
+func (db *Storage) Close() error {
+
+	return db.postgre.Close()
 }
 
-type PostgreDB struct {
-	Methods PostgreMethods
-}
-
-func NewPostgreDB(methods PostgreMethods) *PostgreDB {
-	return &PostgreDB{Methods: methods}
-}
-
-func (db *PostgreDB) Close() error {
-
-	return db.Methods.Close()
-}
-
-func (db *PostgreDB) CheckConnection() error {
-	return db.Methods.CheckConnection()
+func (db *Storage) CheckConnection() error {
+	return db.postgre.CheckConnection()
 }

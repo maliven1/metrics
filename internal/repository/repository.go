@@ -11,3 +11,10 @@ type Cache interface {
 	CheckCounter(key string) bool
 	CheckItemGauge(key string) bool
 }
+type Postgre interface {
+	Close() error
+	CheckConnection() error
+	SetGauge(key string, value float64)
+	SetCounter(key string, value int64)
+	AddCounter(key string, value int64) bool
+}
