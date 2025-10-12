@@ -1,5 +1,7 @@
 package repository
 
+import "log"
+
 type MemStorage struct {
 	Storage
 	cache Cache
@@ -18,6 +20,7 @@ func (c *MemStorage) CheckItemGauge(key string) bool {
 
 func (c *MemStorage) SetGauge(key string, value float64) {
 	if c.Storage.postgre != nil && c.Storage.postgre.CheckConnection() == nil {
+		log.Println("22")
 		c.Storage.postgre.SetGauge(key, value)
 	}
 	c.cache.SetGauge(key, value)
@@ -25,6 +28,7 @@ func (c *MemStorage) SetGauge(key string, value float64) {
 
 func (c *MemStorage) SetCounter(key string, value int64) {
 	if c.Storage.postgre != nil && c.Storage.CheckConnection() == nil {
+		log.Println("11")
 		c.Storage.postgre.SetCounter(key, value)
 	}
 	c.cache.SetCounter(key, value)
@@ -47,6 +51,7 @@ func (c *MemStorage) GetCounter() map[string]int64 {
 func (c *MemStorage) AddCounter(key string, value int64) bool {
 
 	if c.Storage.postgre != nil && c.Storage.CheckConnection() == nil {
+		log.Println("33")
 		c.Storage.postgre.SetCounter(key, value)
 	}
 	return c.cache.AddCounter(key, value)
