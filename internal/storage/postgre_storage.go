@@ -85,6 +85,7 @@ func (db *PostgreDB) SetCounter(key string, value int64) {
 }
 
 func (db *PostgreDB) GetGauge() map[string]float64 {
+
 	// First get all gauge keys
 	rows, err := db.DB.Query("SELECT gauge FROM metrics WHERE gauge IS NOT NULL AND gauge != ''")
 	if err != nil {

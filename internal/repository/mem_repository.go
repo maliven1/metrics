@@ -1,46 +1,53 @@
 package repository
 
-type Storage struct {
-	cache   Cache
-	postgre Postgre
+type MemStorage struct {
+	Storage
+	cache Cache
 }
 
-func NewCache(cache Cache, postgre Postgre) *Storage {
-	return &Storage{cache: cache, postgre: postgre}
+func NewCache(cache Cache) *MemStorage {
+	return &MemStorage{cache: cache}
 }
 
-func (c *Storage) CheckCounter(key string) bool {
+func (c *MemStorage) CheckCounter(key string) bool {
 	return c.cache.CheckCounter(key)
 }
-func (c *Storage) CheckItemGauge(key string) bool {
+func (c *MemStorage) CheckItemGauge(key string) bool {
 	return c.cache.CheckItemGauge(key)
 }
 
-func (c *Storage) SetGauge(key string, value float64) {
-
+func (c *MemStorage) SetGauge(key string, value float64) {
+	if c.Storage.postgre != nil && c.Storage.CheckConnection() == nil {
+		c.Storage.SetGaugeStrorage(key, value)
+	}
 	c.cache.SetGauge(key, value)
 }
 
-func (c *Storage) SetCounter(key string, value int64) {
-
+func (c *MemStorage) SetCounter(key string, value int64) {
+	if c.Storage.postgre != nil && c.Storage.CheckConnection() == nil {
+		c.Storage.SetCounterStorage(key, value)
+	}
 	c.cache.SetCounter(key, value)
 }
 
-func (c *Storage) GetGauge() map[string]float64 {
+func (c *MemStorage) GetGauge() map[string]float64 {
 	return c.cache.GetGauge()
 }
 
-func (c *Storage) GetItemGauge(s string) (string, float64) {
+func (c *MemStorage) GetItemGauge(s string) (string, float64) {
 	return c.cache.GetItemGauge(s)
 }
-func (c *Storage) GetItemCounter(s string) (string, int64) {
+func (c *MemStorage) GetItemCounter(s string) (string, int64) {
 	return c.cache.GetItemCounter(s)
 }
-func (c *Storage) GetCounter() map[string]int64 {
+func (c *MemStorage) GetCounter() map[string]int64 {
 	return c.cache.GetCounter()
 }
 
-func (c *Storage) AddCounter(key string, value int64) bool {
+func (c *MemStorage) AddCounter(key string, value int64) bool {
 
+	if c.Storage.postgre != nil && c.Storage.CheckConnection() == nil {
+		c.cache.AddCounter(key, value)
+	}
 	return c.cache.AddCounter(key, value)
 }

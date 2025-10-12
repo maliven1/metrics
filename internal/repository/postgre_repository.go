@@ -1,11 +1,19 @@
 package repository
 
+type Storage struct {
+	postgre Postgre
+}
+
+func NewStorage(postgre Postgre) *Storage {
+	return &Storage{postgre: postgre}
+}
 func (s *Storage) Close() error {
 
 	return s.postgre.Close()
 }
 
 func (s *Storage) CheckConnection() error {
+
 	return s.postgre.CheckConnection()
 }
 
