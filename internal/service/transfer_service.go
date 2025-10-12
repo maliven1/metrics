@@ -8,6 +8,7 @@ import (
 )
 
 func TransferCacheToPostgreSQL(memRepo MemRepo, postgreRepo repository.Postgre, cfg config.ServerConfig) {
+
 	for {
 		time.Sleep(time.Duration(cfg.StoreInterval) * time.Second)
 		gauges := memRepo.GetGauge()
@@ -20,5 +21,4 @@ func TransferCacheToPostgreSQL(memRepo MemRepo, postgreRepo repository.Postgre, 
 			postgreRepo.SetCounter(key, value)
 		}
 	}
-
 }
