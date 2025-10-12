@@ -16,5 +16,4 @@ type Postgre interface {
 	CheckConnection() error
 	SetGauge(key string, value float64)
 	SetCounter(key string, value int64)
-	AddCounter(key string, value int64) bool
 }

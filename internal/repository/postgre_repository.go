@@ -23,6 +23,3 @@ func (s *Storage) SetGaugeStrorage(key string, value float64) {
 func (s *Storage) SetCounterStorage(key string, value int64) {
 	s.postgre.SetCounter(key, value)
 }
-func (s *Storage) AddCounterStorage(key string, value int64) bool {
-	return s.postgre.AddCounter(key, value)
-}
