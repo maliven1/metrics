@@ -13,6 +13,7 @@ type Service interface {
 }
 type PostgreService interface {
 	CheckConnection() int
+	SetMetrics(metrics []models.Metrics) int
 }
 
 type Handler struct {

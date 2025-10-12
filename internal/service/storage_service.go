@@ -22,3 +22,17 @@ func (s *PostgreService) CheckConnection() int {
 	}
 	return models.StatusOK
 }
+
+func (s *PostgreService) SetMetrics(metrics []models.Metrics) int {
+	if metrics == nil {
+		return models.StatusBadRequest
+	}
+	for _, v := range metrics {
+		if v.MType == models.Gauge {
+			s.PostgreRepo.SetGauge(v.ID, *v.Value)
+		} else if v.MType == models.Counter {
+			s.PostgreRepo.SetCounter(v.ID, *v.Delta)
+		}
+	}
+	return models.StatusOK
+}

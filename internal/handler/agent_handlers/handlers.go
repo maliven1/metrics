@@ -84,6 +84,84 @@ func (s SendClient) SendClientMetrics() {
 	}
 }
 
+func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger) {
+
+	endpoint := "http://" + s.cfg.Address + "/updates/"
+	log.Info("start agent on endpoint: ", endpoint)
+	client := &http.Client{}
+	go s.AddHandler.CollectMetrics()
+	for {
+		time.Sleep(time.Duration(s.cfg.ReportInterval) * time.Second)
+		gauge, counter := s.AddHandler.GetMetrics()
+
+		// Collect all metrics in a batch
+		var metrics []models.Metrics
+
+		// Add gauge metrics to batch
+		for i, v := range gauge {
+			if i == "" {
+				continue
+			}
+			metric := models.Metrics{MType: models.Gauge, ID: i, Value: &v}
+			metrics = append(metrics, metric)
+		}
+
+		// Add counter metrics to batch
+		for i, v := range counter {
+			if i == "" {
+				continue
+			}
+			metric := models.Metrics{MType: models.Counter, ID: i, Delta: &v}
+			metrics = append(metrics, metric)
+		}
+
+		// Send batch of metrics
+		if len(metrics) > 0 {
+			data, err := json.Marshal(metrics)
+			if err != nil {
+				log.Error("Failed to marshal metrics batch: ", err)
+				continue
+			}
+
+			var buf bytes.Buffer
+			gzipWriter := gzip.NewWriter(&buf)
+
+			_, err = gzipWriter.Write(data)
+			if err != nil {
+				log.Error("Failed to write to gzip writer: ", err)
+				continue
+			}
+			err = gzipWriter.Flush()
+			if err != nil {
+				log.Error("Failed to flush gzip writer: ", err)
+				continue
+			}
+			err = gzipWriter.Close()
+			if err != nil {
+				log.Error("Failed to close gzip writer: ", err)
+				continue
+			}
+
+			request, err := http.NewRequest(http.MethodPost, endpoint, &buf)
+			if err != nil {
+				log.Error("Failed to create request: ", err)
+				continue
+			}
+
+			request.Header.Set("content-type", "application/json")
+			request.Header.Set("Content-Encoding", "gzip")
+			request.Header.Set("Accept-Encoding", "gzip")
+
+			response, err := client.Do(request)
+			if err != nil {
+				log.Error("Failed to send metrics batch: ", err)
+				continue
+			}
+			response.Body.Close()
+		}
+	}
+}
+
 func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger) {
 
 	endpoint := "http://" + s.cfg.Address + "/update/"
