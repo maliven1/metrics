@@ -17,9 +17,9 @@ func (s *Storage) CheckConnection() error {
 	return s.postgre.CheckConnection()
 }
 
-func (s *Storage) SetGaugeStrorage(key string, value float64) {
+func (s *Storage) SetGauge(key string, value float64) {
 	s.postgre.SetGauge(key, value)
 }
-func (s *Storage) SetCounterStorage(key string, value int64) {
+func (s *Storage) SetCounter(key string, value int64) {
 	s.postgre.SetCounter(key, value)
 }

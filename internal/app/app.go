@@ -38,10 +38,14 @@ func Run() {
 	cahce := repository.NewCache(memStorage)
 	repo := repository.NewStorage(postgreStorage)
 	postgreService := service.NewPostgreService(repo)
-	service := service.NewService(cahce)
-	h := serverhandlers.NewHandler(service, postgreService)
+	logic := service.NewService(cahce)
+	h := serverhandlers.NewHandler(logic, postgreService)
 
-	go service.InitFile(*cfg, log)
+	if postgreStorage != nil {
+		go service.TransferCacheToPostgreSQL(cahce, repo, *cfg)
+	}
+
+	go logic.InitFile(*cfg, log)
 
 	r := chi.NewRouter()
 	router.NewRouter(r, h, log)
