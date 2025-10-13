@@ -172,6 +172,10 @@ func (db *PostgreDB) GetAllGauges() (map[string]float64, error) {
 		gauges[key] = value
 	}
 
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return gauges, nil
 }
 
@@ -192,6 +196,10 @@ func (db *PostgreDB) GetAllCounters() (map[string]int64, error) {
 			return nil, err
 		}
 		counters[key] = value
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return counters, nil
