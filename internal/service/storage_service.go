@@ -34,13 +34,29 @@ func (s *PostgreService) SetMetrics(metrics []models.Metrics) int {
 	for _, v := range metrics {
 		if v.MType == models.Gauge {
 			s.PostgreRepo.SetGauge(v.ID, *v.Value)
-			s.MemRepo.SetGauge(v.ID, *v.Value)
+
 		} else if v.MType == models.Counter {
 			s.PostgreRepo.SetCounter(v.ID, *v.Delta)
-			if !s.MemRepo.AddCounter(v.ID, *v.Delta) {
-				s.MemRepo.SetCounter(v.ID, *v.Delta)
-			}
+
 		}
+	}
+
+	gauges, err := s.PostgreRepo.GetAllGauges()
+	if err != nil {
+		return models.StatusInternalServerError
+	}
+
+	for key, value := range gauges {
+		s.MemRepo.SetGauge(key, value)
+	}
+
+	counters, err := s.PostgreRepo.GetAllCounters()
+	if err != nil {
+		return models.StatusInternalServerError
+	}
+
+	for key, value := range counters {
+		s.MemRepo.SetCounter(key, value)
 	}
 	return models.StatusOK
 }
