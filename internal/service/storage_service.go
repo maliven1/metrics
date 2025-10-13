@@ -37,7 +37,7 @@ func (s *PostgreService) SetMetrics(metrics []models.Metrics) int {
 			s.MemRepo.SetGauge(v.ID, *v.Value)
 		} else if v.MType == models.Counter {
 			s.PostgreRepo.SetCounter(v.ID, *v.Delta)
-			s.MemRepo.SetCounter(v.ID, *v.Delta)
+			s.MemRepo.AddCounter(v.ID, *v.Delta)
 		}
 	}
 	return models.StatusOK
