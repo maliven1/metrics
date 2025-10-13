@@ -4,10 +4,14 @@ import models "github.com/maliven1/metrics/internal/model"
 
 type PostgreService struct {
 	PostgreRepo PostgreRepo
+	MemRepo     MemRepo
 }
 
-func NewPostgreService(repo PostgreRepo) *PostgreService {
-	return &PostgreService{PostgreRepo: repo}
+func NewPostgreService(postgreRepo PostgreRepo, memRepo MemRepo) *PostgreService {
+	return &PostgreService{
+		PostgreRepo: postgreRepo,
+		MemRepo:     memRepo,
+	}
 }
 
 func (s *PostgreService) Close() {
@@ -30,8 +34,10 @@ func (s *PostgreService) SetMetrics(metrics []models.Metrics) int {
 	for _, v := range metrics {
 		if v.MType == models.Gauge {
 			s.PostgreRepo.SetGauge(v.ID, *v.Value)
+			s.MemRepo.SetGauge(v.ID, *v.Value)
 		} else if v.MType == models.Counter {
 			s.PostgreRepo.SetCounter(v.ID, *v.Delta)
+			s.MemRepo.SetCounter(v.ID, *v.Delta)
 		}
 	}
 	return models.StatusOK

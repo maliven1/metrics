@@ -37,7 +37,7 @@ func Run() {
 	memStorage := storage.NewMemStorage()
 	cahce := repository.NewCache(memStorage)
 	repo := repository.NewStorage(postgreStorage)
-	postgreService := service.NewPostgreService(repo)
+	postgreService := service.NewPostgreService(repo, cahce)
 	logic := service.NewService(cahce)
 	h := serverhandlers.NewHandler(logic, postgreService)
 

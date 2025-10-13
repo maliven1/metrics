@@ -152,3 +152,47 @@ func UpMigrations(db *sql.DB, log *zap.SugaredLogger) error {
 	}
 	return nil
 }
+
+func (db *PostgreDB) GetAllGauges() (map[string]float64, error) {
+	gauges := make(map[string]float64)
+
+	rows, err := db.DB.Query("SELECT gauge, gauge_value FROM metrics WHERE gauge IS NOT NULL AND gauge != ''")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var key string
+		var value float64
+		err := rows.Scan(&key, &value)
+		if err != nil {
+			return nil, err
+		}
+		gauges[key] = value
+	}
+
+	return gauges, nil
+}
+
+func (db *PostgreDB) GetAllCounters() (map[string]int64, error) {
+	counters := make(map[string]int64)
+
+	rows, err := db.DB.Query("SELECT count, count_value FROM metrics WHERE count IS NOT NULL AND count != ''")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var key string
+		var value int64
+		err := rows.Scan(&key, &value)
+		if err != nil {
+			return nil, err
+		}
+		counters[key] = value
+	}
+
+	return counters, nil
+}
