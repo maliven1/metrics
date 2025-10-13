@@ -45,16 +45,13 @@ func (s *PostgreService) SetMetrics(metrics []models.Metrics) int {
 	if err != nil {
 		return models.StatusInternalServerError
 	}
-
 	for key, value := range gauges {
 		s.MemRepo.SetGauge(key, value)
 	}
-
 	counters, err := s.PostgreRepo.GetAllCounters()
 	if err != nil {
 		return models.StatusInternalServerError
 	}
-
 	for key, value := range counters {
 		s.MemRepo.SetCounter(key, value)
 	}

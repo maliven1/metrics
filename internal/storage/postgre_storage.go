@@ -74,7 +74,7 @@ func (db *PostgreDB) SetCounter(key string, value int64) {
 	}
 
 	if exists {
-		_, err = db.DB.Exec("UPDATE metrics SET count_value = $1 WHERE count = $2", value, key)
+		_, err = db.DB.Exec("UPDATE metrics SET count_value + $1 WHERE count = $2", value, key)
 	} else {
 		_, err = db.DB.Exec("INSERT INTO metrics (count, count_value) VALUES ($1, $2)", key, value)
 	}
@@ -103,16 +103,6 @@ func (db *PostgreDB) GetItemCounter(key string) (string, int64) {
 		return "", 0
 	}
 	return key, value
-}
-
-func (db *PostgreDB) CheckCounter(key string) bool {
-	var exists bool
-	err := db.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM metrics WHERE count = $1)", key).Scan(&exists)
-	if err != nil {
-
-		return false
-	}
-	return exists
 }
 
 func (db *PostgreDB) CheckItemGauge(key string) bool {
