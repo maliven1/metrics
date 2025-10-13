@@ -1,5 +1,7 @@
 package repository
 
+import "context"
+
 type Cache interface {
 	SetGauge(key string, value float64)
 	SetCounter(key string, value int64)
@@ -14,8 +16,8 @@ type Cache interface {
 type Postgre interface {
 	Close() error
 	CheckConnection() error
-	SetGauge(key string, value float64)
-	SetCounter(key string, value int64)
+	SetGauge(key string, value float64, ctx context.Context)
+	SetCounter(key string, value int64, ctx context.Context)
 	GetAllGauges() (map[string]float64, error)
 	GetAllCounters() (map[string]int64, error)
 }

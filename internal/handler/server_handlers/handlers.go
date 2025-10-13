@@ -1,6 +1,8 @@
 package serverhandlers
 
 import (
+	"context"
+
 	models "github.com/maliven1/metrics/internal/model"
 )
 
@@ -13,7 +15,7 @@ type Service interface {
 }
 type PostgreService interface {
 	CheckConnection() int
-	SetMetrics(metrics []models.Metrics) int
+	SetMetrics(metrics []models.Metrics, ctx context.Context) int
 }
 
 type Handler struct {

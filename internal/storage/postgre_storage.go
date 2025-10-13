@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -45,41 +46,74 @@ func (db *PostgreDB) CheckConnection() error {
 	return nil
 }
 
-func (db *PostgreDB) SetGauge(key string, value float64) {
+func (db *PostgreDB) SetGauge(key string, value float64, ctx context.Context) {
+	tx, err := db.DB.Begin()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+
 	var exists bool
-	err := db.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM metrics WHERE gauge = $1)", key).Scan(&exists)
+	err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM metrics WHERE gauge = $1)", key).Scan(&exists)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
 	if exists {
-		_, err = db.DB.Exec("UPDATE metrics SET gauge_value = $1 WHERE gauge = $2", value, key)
+		_, err = tx.ExecContext(ctx, "UPDATE metrics SET gauge_value = $1 WHERE gauge = $2", value, key)
 	} else {
-		_, err = db.DB.Exec("INSERT INTO metrics (gauge, gauge_value, count, count_value) VALUES ($1, $2, '', 0)", key, value)
+		_, err = tx.ExecContext(ctx, "INSERT INTO metrics (gauge, gauge_value, count, count_value) VALUES ($1, $2, '', 0)", key, value)
 	}
 
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	err = tx.Commit()
 	if err != nil {
 		log.Println(err)
 		return
 	}
 }
 
-func (db *PostgreDB) SetCounter(key string, value int64) {
+func (db *PostgreDB) SetCounter(key string, value int64, ctx context.Context) {
+	tx, err := db.DB.Begin()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+
 	var exists bool
-	err := db.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM metrics WHERE count = $1)", key).Scan(&exists)
+	err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM metrics WHERE count = $1)", key).Scan(&exists)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
 	if exists {
-		_, err = db.DB.Exec("UPDATE metrics SET count_value = count_value + $1 WHERE count = $2", value, key)
-
+		_, err = tx.ExecContext(ctx, "UPDATE metrics SET count_value = count_value + $1 WHERE count = $2", value, key)
 	} else {
-		_, err = db.DB.Exec("INSERT INTO metrics (count, count_value) VALUES ($1, $2)", key, value)
+		_, err = tx.ExecContext(ctx, "INSERT INTO metrics (count, count_value) VALUES ($1, $2)", key, value)
 	}
 
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	err = tx.Commit()
 	if err != nil {
 		log.Println(err)
 		return

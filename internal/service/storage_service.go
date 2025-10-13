@@ -1,6 +1,10 @@
 package service
 
-import models "github.com/maliven1/metrics/internal/model"
+import (
+	"context"
+
+	models "github.com/maliven1/metrics/internal/model"
+)
 
 type PostgreService struct {
 	PostgreRepo PostgreRepo
@@ -27,16 +31,16 @@ func (s *PostgreService) CheckConnection() int {
 	return models.StatusOK
 }
 
-func (s *PostgreService) SetMetrics(metrics []models.Metrics) int {
+func (s *PostgreService) SetMetrics(metrics []models.Metrics, ctx context.Context) int {
 	if metrics == nil {
 		return models.StatusBadRequest
 	}
 	for _, v := range metrics {
 		if v.MType == models.Gauge {
-			s.PostgreRepo.SetGauge(v.ID, *v.Value)
+			s.PostgreRepo.SetGauge(v.ID, *v.Value, ctx)
 
 		} else if v.MType == models.Counter {
-			s.PostgreRepo.SetCounter(v.ID, *v.Delta)
+			s.PostgreRepo.SetCounter(v.ID, *v.Delta, ctx)
 
 		}
 	}

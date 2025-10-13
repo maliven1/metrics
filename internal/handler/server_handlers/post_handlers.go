@@ -2,6 +2,7 @@ package serverhandlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -10,7 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (h Handler) PostMetricsHandler() http.HandlerFunc {
+func (h Handler) PostMetricsHandler(ctx context.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "application/json")
 		var buf bytes.Buffer
@@ -23,7 +24,7 @@ func (h Handler) PostMetricsHandler() http.HandlerFunc {
 		if err = json.Unmarshal(buf.Bytes(), &metrics); err != nil {
 			w.WriteHeader(models.StatusBadRequest)
 		}
-		status := h.PostgreHandler.SetMetrics(metrics)
+		status := h.PostgreHandler.SetMetrics(metrics, ctx)
 		w.WriteHeader(status)
 	}
 }

@@ -1,24 +1,25 @@
 package service
 
 import (
+	"context"
 	"time"
 
 	"github.com/maliven1/metrics/internal/config"
 	"github.com/maliven1/metrics/internal/repository"
 )
 
-func TransferCacheToPostgreSQL(memRepo MemRepo, postgreRepo repository.Postgre, cfg config.ServerConfig) {
+func TransferCacheToPostgreSQL(memRepo MemRepo, postgreRepo repository.Postgre, cfg config.ServerConfig, ctx context.Context) {
 
 	for {
 		time.Sleep(time.Duration(cfg.StoreInterval) * time.Second)
 		gauges := memRepo.GetGauge()
 		for key, value := range gauges {
-			postgreRepo.SetGauge(key, value)
+			postgreRepo.SetGauge(key, value, ctx)
 		}
 
 		counters := memRepo.GetCounter()
 		for key, value := range counters {
-			postgreRepo.SetCounter(key, value)
+			postgreRepo.SetCounter(key, value, ctx)
 		}
 	}
 }
