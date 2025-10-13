@@ -26,6 +26,7 @@ func main() {
 	service := agent.NewAgent(repo, cfg)
 	client := agenthandlers.NewSendClient(service, cfg)
 
+	go client.SendClientJSONMetrics(log)
 	client.SendClientBatchMetrics(log)
 
 }
