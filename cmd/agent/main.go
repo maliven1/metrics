@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/maliven1/metrics/internal/agent"
 	"github.com/maliven1/metrics/internal/config"
@@ -26,7 +27,9 @@ func main() {
 	service := agent.NewAgent(repo, cfg)
 	client := agenthandlers.NewSendClient(service, cfg)
 
-	go client.SendClientJSONMetrics(log)
-	client.SendClientBatchMetrics(log)
-
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go client.SendClientJSONMetrics(log, wg)
+	client.SendClientBatchMetrics(log, wg)
+	wg.Wait()
 }

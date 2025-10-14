@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"github.com/maliven1/metrics/internal/config"
@@ -86,7 +87,7 @@ func (s SendClient) SendClientMetrics() {
 	}
 }
 
-func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger) {
+func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg sync.WaitGroup) {
 	const maxRetries = 3
 	const interval = 2
 	var latsError error
@@ -96,6 +97,7 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger) {
 	go s.AddHandler.CollectMetrics()
 	for {
 		if latsError != nil {
+			wg.Done()
 			return
 		}
 		LinearBackoff := 1
@@ -186,7 +188,7 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger) {
 	}
 }
 
-func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger) {
+func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg sync.WaitGroup) {
 	const maxRetries = 3
 	const interval = 2
 	var latsError error
@@ -196,6 +198,7 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger) {
 	go s.AddHandler.CollectMetrics()
 	for {
 		if latsError != nil {
+			wg.Done()
 			return
 		}
 		LinearBackoff := 1
@@ -207,6 +210,7 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger) {
 
 			for i, v := range gauge {
 				if i == "" {
+					wg.Done()
 					return
 				}
 
@@ -214,6 +218,7 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger) {
 				data, err := json.Marshal(metric)
 				if err != nil {
 					log.Error(err)
+					wg.Done()
 					return
 				}
 
@@ -223,11 +228,13 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger) {
 				_, err = gzipWriter.Write(data)
 				if err != nil {
 					log.Info(err)
+					wg.Done()
 					return
 				}
 				err = gzipWriter.Flush()
 				if err != nil {
 					log.Info(err)
+					wg.Done()
 					return
 				}
 				_ = gzipWriter.Close()
@@ -276,6 +283,7 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger) {
 				data, err := json.Marshal(metric)
 				if err != nil {
 					log.Info(err)
+					wg.Done()
 					return
 				}
 
@@ -286,18 +294,21 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger) {
 				_, err = gzipWriter.Write(data)
 				if err != nil {
 					log.Info(err)
+					wg.Done()
 					return
 				}
 
 				err = gzipWriter.Flush()
 				if err != nil {
 					log.Info(err)
+					wg.Done()
 					return
 				}
 				_ = gzipWriter.Close()
 				request, err := http.NewRequest(http.MethodPost, endpoint, &buf)
 				if err != nil {
 					log.Info(err)
+					wg.Done()
 					return
 				}
 
