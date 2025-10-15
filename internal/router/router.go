@@ -22,7 +22,7 @@ func NewRouter(r *chi.Mux, handler *serverhandlers.Handler, log *zap.SugaredLogg
 			r.Get(`/`, handler.GetAllMetricsHandler())
 			r.Post(`/value/`, handler.GetBodyMetricHandler(log))
 			r.Post(`/update/`, handler.PostBodyHandler(log))
-			r.Post(`/updates/`, handler.PostMetricsHandler(ctx))
+			r.Post(`/updates/`, handler.PostMetricsHandler(ctx, log))
 		})
 		r.Post(`/update/*`, handler.PostURLHandler())
 		r.Get(`/value/*`, handler.GetMetricHandler())

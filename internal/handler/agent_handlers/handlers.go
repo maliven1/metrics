@@ -87,7 +87,7 @@ func (s SendClient) SendClientMetrics() {
 	}
 }
 
-func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg sync.WaitGroup) {
+func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg *sync.WaitGroup) {
 	const maxRetries = 3
 	const interval = 2
 	var latsError error
@@ -105,10 +105,8 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg sync.WaitG
 		for attempt := 0; attempt <= maxRetries; {
 			gauge, counter := s.AddHandler.GetMetrics()
 
-			// Collect all metrics in a batch
 			var metrics []models.Metrics
 
-			// Add gauge metrics to batch
 			for i, v := range gauge {
 				if i == "" {
 					continue
@@ -117,7 +115,6 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg sync.WaitG
 				metrics = append(metrics, metric)
 			}
 
-			// Add counter metrics to batch
 			for i, v := range counter {
 				if i == "" {
 					continue
@@ -126,7 +123,6 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg sync.WaitG
 				metrics = append(metrics, metric)
 			}
 
-			// Send batch of metrics
 			if len(metrics) > 0 {
 				data, err := json.Marshal(metrics)
 				if err != nil {
@@ -188,7 +184,7 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg sync.WaitG
 	}
 }
 
-func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg sync.WaitGroup) {
+func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg *sync.WaitGroup) {
 	const maxRetries = 3
 	const interval = 2
 	var latsError error

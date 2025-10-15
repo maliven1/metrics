@@ -46,11 +46,11 @@ func (db *PostgreDB) CheckConnection() error {
 	return nil
 }
 
-func (db *PostgreDB) SetGauge(key string, value float64, ctx context.Context) {
+func (db *PostgreDB) SetGauge(key string, value float64, ctx context.Context) error {
 	tx, err := db.DB.Begin()
 	if err != nil {
 		log.Println(err)
-		return
+		return err
 	}
 	defer func() {
 		if err != nil {
@@ -62,7 +62,7 @@ func (db *PostgreDB) SetGauge(key string, value float64, ctx context.Context) {
 	err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM metrics WHERE gauge = $1)", key).Scan(&exists)
 	if err != nil {
 		log.Println(err)
-		return
+		return err
 	}
 
 	if exists {
@@ -73,21 +73,22 @@ func (db *PostgreDB) SetGauge(key string, value float64, ctx context.Context) {
 
 	if err != nil {
 		log.Println(err)
-		return
+		return err
 	}
 
 	err = tx.Commit()
 	if err != nil {
 		log.Println(err)
-		return
+		return err
 	}
+	return nil
 }
 
-func (db *PostgreDB) SetCounter(key string, value int64, ctx context.Context) {
+func (db *PostgreDB) SetCounter(key string, value int64, ctx context.Context) error {
 	tx, err := db.DB.Begin()
 	if err != nil {
 		log.Println(err)
-		return
+		return err
 	}
 	defer func() {
 		if err != nil {
@@ -99,7 +100,7 @@ func (db *PostgreDB) SetCounter(key string, value int64, ctx context.Context) {
 	err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM metrics WHERE count = $1)", key).Scan(&exists)
 	if err != nil {
 		log.Println(err)
-		return
+		return err
 	}
 
 	if exists {
@@ -110,44 +111,15 @@ func (db *PostgreDB) SetCounter(key string, value int64, ctx context.Context) {
 
 	if err != nil {
 		log.Println(err)
-		return
+		return err
 	}
 
 	err = tx.Commit()
 	if err != nil {
 		log.Println(err)
-		return
+		return err
 	}
-}
-
-func (db *PostgreDB) GetItemGauge(key string) (string, float64) {
-	var value float64
-	err := db.DB.QueryRow("SELECT gauge_value FROM metrics WHERE gauge = $1", key).Scan(&value)
-	if err != nil {
-
-		return "", 0
-	}
-	return key, value
-}
-
-func (db *PostgreDB) GetItemCounter(key string) (string, int64) {
-	var value int64
-	err := db.DB.QueryRow("SELECT count_value FROM metrics WHERE count = $1", key).Scan(&value)
-	if err != nil {
-
-		return "", 0
-	}
-	return key, value
-}
-
-func (db *PostgreDB) CheckItemGauge(key string) bool {
-	var exists bool
-	err := db.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM metrics WHERE gauge = $1)", key).Scan(&exists)
-	if err != nil {
-
-		return false
-	}
-	return exists
+	return nil
 }
 
 func UpMigrations(db *sql.DB, log *zap.SugaredLogger) error {

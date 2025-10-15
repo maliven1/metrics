@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (h Handler) PostMetricsHandler(ctx context.Context) http.HandlerFunc {
+func (h Handler) PostMetricsHandler(ctx context.Context, log *zap.SugaredLogger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "application/json")
 		var buf bytes.Buffer
@@ -24,7 +24,10 @@ func (h Handler) PostMetricsHandler(ctx context.Context) http.HandlerFunc {
 		if err = json.Unmarshal(buf.Bytes(), &metrics); err != nil {
 			w.WriteHeader(models.StatusBadRequest)
 		}
-		status := h.PostgreHandler.SetMetrics(metrics, ctx)
+		status, err := h.PostgreHandler.SetMetrics(metrics, ctx)
+		if err != nil {
+			log.Error(err)
+		}
 		w.WriteHeader(status)
 	}
 }

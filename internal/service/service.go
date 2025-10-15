@@ -5,8 +5,8 @@ import "context"
 type PostgreRepo interface {
 	Close() error
 	CheckConnection() error
-	SetGauge(key string, value float64, ctx context.Context)
-	SetCounter(key string, value int64, ctx context.Context)
+	SetGauge(key string, value float64, ctx context.Context) error
+	SetCounter(key string, value int64, ctx context.Context) error
 	GetAllGauges() (map[string]float64, error)
 	GetAllCounters() (map[string]int64, error)
 }

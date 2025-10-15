@@ -15,7 +15,7 @@ type Service interface {
 }
 type PostgreService interface {
 	CheckConnection() int
-	SetMetrics(metrics []models.Metrics, ctx context.Context) int
+	SetMetrics(metrics []models.Metrics, ctx context.Context) (int, error)
 }
 
 type Handler struct {
