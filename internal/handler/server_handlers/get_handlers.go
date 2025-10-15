@@ -20,22 +20,22 @@ func (h Handler) GetBodyMetricHandler(log *zap.SugaredLogger) http.HandlerFunc {
 		_, err := buf.ReadFrom(r.Body)
 		if err != nil {
 
-			w.WriteHeader(models.StatusBadRequest)
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		if err = json.Unmarshal(buf.Bytes(), &metric); err != nil {
 
-			w.WriteHeader(models.StatusBadRequest)
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		res, status := h.Handler.GetStructMetric(metric)
 		resp, err := json.Marshal(res)
 		if err != nil {
-			log.Error("Marshal err: ", err, "status code: ", models.StatusInternalServerError)
-			w.WriteHeader(models.StatusInternalServerError)
+			log.Error("Marshal err: ", err, "status code: ", http.StatusInternalServerError)
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		if status == models.StatusOK {
+		if status == http.StatusOK {
 			w.WriteHeader(status)
 
 			w.Write(resp)
@@ -52,7 +52,7 @@ func (h Handler) GetMetricHandler() http.HandlerFunc {
 		w.Header().Add("content-type", "charset=utf-8")
 		pathSplit := strings.Split(r.URL.Path, "/")
 		metrics, status := h.Handler.GetMetric(pathSplit)
-		if status == models.StatusOK {
+		if status == http.StatusOK {
 			w.WriteHeader(status)
 
 			render.PlainText(w, r, metrics)
@@ -71,16 +71,16 @@ func (h Handler) GetAllMetricsHandler() http.HandlerFunc {
 		count, gauge := h.Handler.GetAllMetrics()
 		jsonCount, err := json.Marshal(count)
 		if err != nil {
-			w.WriteHeader(500)
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		jsonGauge, err := json.Marshal(gauge)
 		if err != nil {
-			w.WriteHeader(500)
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		str := string(jsonCount) + string(jsonGauge)
-		w.WriteHeader(models.StatusOK)
+		w.WriteHeader(http.StatusOK)
 
 		render.HTML(w, r, str)
 
@@ -91,7 +91,7 @@ func (h Handler) PingHandler(log *zap.SugaredLogger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "text/plain")
 		status := h.PostgreHandler.CheckConnection()
-		if status == models.StatusInternalServerError {
+		if status == http.StatusInternalServerError {
 			log.Error("status cod: ", status, "ping postgreDB failed")
 			w.WriteHeader(status)
 			return

@@ -4,15 +4,14 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
 
+	"github.com/avast/retry-go"
 	"github.com/maliven1/metrics/internal/config"
 	models "github.com/maliven1/metrics/internal/model"
 	"go.uber.org/zap"
@@ -88,28 +87,24 @@ func (s SendClient) SendClientMetrics() {
 }
 
 func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg *sync.WaitGroup) {
-	const maxRetries = 3
-	const interval = 2
-	var latsError error
+	var delay time.Duration = time.Second // Начальная задержка
+	const increment = 2 * time.Second     // Увеличение задержки на 2 секунды после каждой попытки
 	endpoint := "http://" + s.cfg.Address + "/updates/"
 	log.Info("start agent on endpoint: ", endpoint)
 	client := &http.Client{}
 	go s.AddHandler.CollectMetrics()
+	defer wg.Done()
+
 	for {
-		if latsError != nil {
-			wg.Done()
-			return
-		}
-		LinearBackoff := 1
 		time.Sleep(time.Duration(s.cfg.ReportInterval) * time.Second)
-		for attempt := 0; attempt <= maxRetries; {
+		err := retry.Do(func() error {
 			gauge, counter := s.AddHandler.GetMetrics()
 
 			var metrics []models.Metrics
 
 			for i, v := range gauge {
 				if i == "" {
-					continue
+					return nil
 				}
 				metric := models.Metrics{MType: models.Gauge, ID: i, Value: &v}
 				metrics = append(metrics, metric)
@@ -117,7 +112,7 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg *sync.Wait
 
 			for i, v := range counter {
 				if i == "" {
-					continue
+					return nil
 				}
 				metric := models.Metrics{MType: models.Counter, ID: i, Delta: &v}
 				metrics = append(metrics, metric)
@@ -127,7 +122,7 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg *sync.Wait
 				data, err := json.Marshal(metrics)
 				if err != nil {
 					log.Error("Failed to marshal metrics batch: ", err)
-					continue
+					return nil
 				}
 
 				var buf bytes.Buffer
@@ -136,23 +131,23 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg *sync.Wait
 				_, err = gzipWriter.Write(data)
 				if err != nil {
 					log.Error("Failed to write to gzip writer: ", err)
-					continue
+					return nil
 				}
 				err = gzipWriter.Flush()
 				if err != nil {
 					log.Error("Failed to flush gzip writer: ", err)
-					continue
+					return nil
 				}
 				err = gzipWriter.Close()
 				if err != nil {
 					log.Error("Failed to close gzip writer: ", err)
-					continue
+					return nil
 				}
 
 				request, err := http.NewRequest(http.MethodPost, endpoint, &buf)
 				if err != nil {
 					log.Error("Failed to create request: ", err)
-					continue
+					return nil
 				}
 
 				request.Header.Set("content-type", "application/json")
@@ -161,61 +156,49 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg *sync.Wait
 
 				response, err := client.Do(request)
 				if err != nil {
-					if errors.Is(err, err.(net.Error)) {
-						log.Info(err)
-						LinearBackoff += interval
-						attempt++
-						latsError = err
-						break
-					} else {
-						log.Info(err)
-						break
-					}
-
-				} else {
-					latsError = nil
+					log.Info(err)
+					return err
 				}
 				defer response.Body.Close()
+
 			}
-			if latsError == nil {
-				break
+			return nil
+		}, retry.Attempts(3), retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
+			if n > 0 {
+				delay += increment
 			}
+			return delay
+		}))
+		if err != nil {
+			return
 		}
 	}
+
 }
 
 func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg *sync.WaitGroup) {
-	const maxRetries = 3
-	const interval = 2
-	var latsError error
+	var delay time.Duration = time.Second // Начальная задержка
+	const increment = 2 * time.Second     // Увеличение задержки на 2 секунды после каждой попытки
 	endpoint := "http://" + s.cfg.Address + "/update/"
 	log.Info("start agent on endpoint: ", endpoint)
 	client := &http.Client{}
+	defer wg.Done()
 	go s.AddHandler.CollectMetrics()
+
 	for {
-		if latsError != nil {
-			wg.Done()
-			return
-		}
-		LinearBackoff := 1
 		time.Sleep(time.Duration(s.cfg.ReportInterval) * time.Second)
-		for attempt := 0; attempt <= maxRetries; {
-
-			time.Sleep(time.Duration(LinearBackoff) * time.Second)
+		err := retry.Do(func() error {
 			gauge, counter := s.AddHandler.GetMetrics()
-
 			for i, v := range gauge {
 				if i == "" {
-					wg.Done()
-					return
+					return nil
 				}
 
 				metric := models.Metrics{MType: models.Gauge, ID: i, Value: &v}
 				data, err := json.Marshal(metric)
 				if err != nil {
 					log.Error(err)
-					wg.Done()
-					return
+					return nil
 				}
 
 				var buf bytes.Buffer
@@ -223,15 +206,13 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg *sync.WaitG
 
 				_, err = gzipWriter.Write(data)
 				if err != nil {
-					log.Info(err)
-					wg.Done()
-					return
+					log.Error(err)
+					return nil
 				}
 				err = gzipWriter.Flush()
 				if err != nil {
 					log.Info(err)
-					wg.Done()
-					return
+					return nil
 				}
 				_ = gzipWriter.Close()
 
@@ -250,27 +231,15 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg *sync.WaitG
 				request.Header.Set("Accept-Encoding", "gzip")
 				response, err := client.Do(request)
 				if err != nil {
-					if errors.Is(err, err.(net.Error)) {
-						log.Info(err)
-						LinearBackoff += interval
-						attempt++
-						latsError = err
-						break
-					} else {
-						log.Info(err)
-						break
-					}
-
-				} else {
-					latsError = nil
+					log.Info(err)
+					return err
 				}
 				defer response.Body.Close()
+
 			}
 
 			for i, v := range counter {
-				if latsError != nil {
-					break
-				}
+
 				if i == "" {
 					break
 				}
@@ -279,8 +248,8 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg *sync.WaitG
 				data, err := json.Marshal(metric)
 				if err != nil {
 					log.Info(err)
-					wg.Done()
-					return
+
+					return err
 				}
 
 				var buf bytes.Buffer
@@ -290,37 +259,44 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg *sync.WaitG
 				_, err = gzipWriter.Write(data)
 				if err != nil {
 					log.Info(err)
-					wg.Done()
-					return
+
+					return err
 				}
 
 				err = gzipWriter.Flush()
 				if err != nil {
 					log.Info(err)
-					wg.Done()
-					return
+
+					return err
 				}
 				_ = gzipWriter.Close()
 				request, err := http.NewRequest(http.MethodPost, endpoint, &buf)
 				if err != nil {
 					log.Info(err)
-					wg.Done()
-					return
+
+					return err
 				}
 
 				request.Header.Set("content-type", "application/json")
 				request.Header.Set("Content-Encoding", "gzip")
 				request.Header.Set("Accept-Encoding", "gzip")
+
 				response, err := client.Do(request)
 				if err != nil {
 					log.Info(err)
-					continue
+					return err
 				}
 				defer response.Body.Close()
 			}
-			if latsError == nil {
-				break
+			return nil
+		}, retry.Attempts(3), retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
+			if n > 0 {
+				delay += increment
 			}
+			return delay
+		}))
+		if err != nil {
+			return
 		}
 	}
 }

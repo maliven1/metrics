@@ -18,11 +18,11 @@ func (h Handler) PostMetricsHandler(ctx context.Context, log *zap.SugaredLogger)
 		metrics := []models.Metrics{}
 		_, err := buf.ReadFrom(r.Body)
 		if err != nil {
-			w.WriteHeader(models.StatusBadRequest)
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		if err = json.Unmarshal(buf.Bytes(), &metrics); err != nil {
-			w.WriteHeader(models.StatusBadRequest)
+			w.WriteHeader(http.StatusBadRequest)
 		}
 		status, err := h.PostgreHandler.SetMetrics(metrics, ctx)
 		if err != nil {
@@ -40,21 +40,21 @@ func (h Handler) PostBodyHandler(log *zap.SugaredLogger) http.HandlerFunc {
 		_, err := buf.ReadFrom(r.Body)
 		if err != nil {
 
-			w.WriteHeader(models.StatusBadRequest)
+			w.WriteHeader(http.StatusBadRequest)
 
 			return
 		}
 		if err = json.Unmarshal(buf.Bytes(), &metric); err != nil {
 
-			w.WriteHeader(models.StatusBadRequest)
+			w.WriteHeader(http.StatusBadRequest)
 
 			return
 		}
 		status := h.Handler.AddStructMetric(metric)
 		resp, err := json.Marshal(metric)
 		if err != nil {
-			log.Error("Marshal err: ", err, "status code: ", models.StatusInternalServerError)
-			w.WriteHeader(models.StatusInternalServerError)
+			log.Error("Marshal err: ", err, "status code: ", http.StatusInternalServerError)
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		w.WriteHeader(status)

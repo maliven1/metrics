@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/maliven1/metrics/internal/repository/pgerrors"
+	"github.com/avast/retry-go"
 )
 
 type Storage struct {
@@ -15,159 +15,87 @@ func NewStorage(postgre Postgre) *Storage {
 	return &Storage{postgre: postgre}
 }
 
-func LinearBackoff(callback func() error) error {
-	const maxRetries = 3
-	var lastErr error
-	const interval = 2
-	LinearBackoff := 1
-	classifier := pgerrors.NewPostgresErrorClassifier()
-	for i := 0; i <= maxRetries; i++ {
-		if i != 0 {
-			time.Sleep(time.Duration(LinearBackoff) * time.Second)
-			LinearBackoff += interval
-		}
-		err := callback()
-		if err == nil {
-			return nil
-		}
-		classification := classifier.Classify(err)
-		if classification == pgerrors.NonRetriable {
-			return err
-		}
-		if i == maxRetries {
-			lastErr = err
-		}
-	}
-	return lastErr
-}
 func (s *Storage) Close() error {
 
 	return s.postgre.Close()
 }
 
 func (s *Storage) CheckConnection() error {
-	const maxRetries = 3
-	var lastErr error
-	const interval = 2
-	LinearBackoff := 1
-	classifier := pgerrors.NewPostgresErrorClassifier()
-	for i := 0; i <= maxRetries; i++ {
-		if i != 0 {
-			time.Sleep(time.Duration(LinearBackoff) * time.Second)
-			LinearBackoff += interval
-		}
+	var delay time.Duration = time.Second // Начальная задержка
+	const increment = 2 * time.Second     // Увеличение задержки на 2 секунды после каждой попытки
 
-		err := s.postgre.CheckConnection()
-		if err == nil {
-			return nil
+	err := retry.Do(func() error {
+		return s.postgre.CheckConnection()
+	}, retry.Attempts(3), retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
+		if n > 0 {
+			delay += increment
 		}
-		classification := classifier.Classify(err)
-		if classification == pgerrors.NonRetriable {
-			return err
-		}
-		if i == maxRetries {
-			lastErr = err
-		}
-	}
-	return lastErr
+		return delay
+	}))
+	return err
 }
 func (s *Storage) SetGauge(key string, value float64, ctx context.Context) error {
-	const maxRetries = 3
-	var lastErr error
-	const interval = 2
-	LinearBackoff := 1
-	classifier := pgerrors.NewPostgresErrorClassifier()
-	for i := 0; i <= maxRetries; i++ {
-		if i != 0 {
-			time.Sleep(time.Duration(LinearBackoff) * time.Second)
-			LinearBackoff += interval
+	var delay time.Duration = time.Second // Начальная задержка
+	const increment = 2 * time.Second     // Увеличение задержки на 2 секунды после каждой попытки
+
+	err := retry.Do(func() error {
+		return s.postgre.SetGauge(key, value, ctx)
+	}, retry.Attempts(3), retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
+		if n > 0 {
+			delay += increment
 		}
-		err := s.postgre.SetGauge(key, value, ctx)
-		if err == nil {
-			return nil
-		}
-		classification := classifier.Classify(err)
-		if classification == pgerrors.NonRetriable {
-			return err
-		}
-		if i == maxRetries {
-			lastErr = err
-		}
-	}
-	return lastErr
+		return delay
+	}), retry.Context(ctx))
+	return err
 
 }
 func (s *Storage) SetCounter(key string, value int64, ctx context.Context) error {
-	const maxRetries = 3
-	var lastErr error
-	const interval = 2
-	LinearBackoff := 1
-	classifier := pgerrors.NewPostgresErrorClassifier()
-	for i := 0; i <= maxRetries; i++ {
-		if i != 0 {
-			time.Sleep(time.Duration(LinearBackoff) * time.Second)
-			LinearBackoff += interval
+	var delay time.Duration = time.Second // Начальная задержка
+	const increment = 2 * time.Second     // Увеличение задержки на 2 секунды после каждой попытки
+
+	err := retry.Do(func() error {
+		return s.postgre.SetCounter(key, value, ctx)
+	}, retry.Attempts(3), retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
+		if n > 0 {
+			delay += increment
 		}
-		err := s.postgre.SetCounter(key, value, ctx)
-		if err == nil {
-			return nil
-		}
-		classification := classifier.Classify(err)
-		if classification == pgerrors.NonRetriable {
-			return err
-		}
-		if i == maxRetries {
-			lastErr = err
-		}
-	}
-	return lastErr
+		return delay
+	}), retry.Context(ctx))
+	return err
 
 }
 
 func (s *Storage) GetAllGauges() (map[string]float64, error) {
-	const maxRetries = 3
-	var lastErr error
-	const interval = 2
-	LinearBackoff := 1
-	classifier := pgerrors.NewPostgresErrorClassifier()
-	for i := 0; i <= maxRetries; i++ {
-		time.Sleep(time.Duration(LinearBackoff) * time.Second)
-		LinearBackoff += interval
-		m, err := s.postgre.GetAllGauges()
-		if err == nil {
-			return m, nil
+	var delay time.Duration = time.Second // Начальная задержка
+	const increment = 2 * time.Second     // Увеличение задержки на 2 секунды после каждой попытки
+	m := make(map[string]float64)
+	err := retry.Do(func() error {
+		var err error
+		m, err = s.postgre.GetAllGauges()
+		return err
+	}, retry.Attempts(3), retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
+		if n > 0 {
+			delay += increment
 		}
-		classification := classifier.Classify(err)
-		if classification == pgerrors.NonRetriable {
-			return nil, err
-		}
-		if i == maxRetries {
-			lastErr = err
-		}
-	}
-	return nil, lastErr
+		return delay
+	}))
+	return m, err
+
 }
 
 func (s *Storage) GetAllCounters() (map[string]int64, error) {
-	const maxRetries = 3
-	var lastErr error
-	const interval = 2
-	LinearBackoff := 1
-	classifier := pgerrors.NewPostgresErrorClassifier()
-	for i := 0; i <= maxRetries; i++ {
-		time.Sleep(time.Duration(LinearBackoff) * time.Second)
-		LinearBackoff += interval
-		m, err := s.postgre.GetAllCounters()
-		if err == nil {
-			return m, nil
+	var delay time.Duration = time.Second // Начальная задержка
+	const increment = 2 * time.Second     // Увеличение задержки на 2 секунды после каждой попытки
+	m := make(map[string]int64)
+	err := retry.Do(func() error {
+		var err error
+		m, err = s.postgre.GetAllCounters()
+		return err
+	}, retry.Attempts(3), retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
+		if n > 0 {
+			delay += increment
 		}
-		classification := classifier.Classify(err)
-		if classification == pgerrors.NonRetriable {
-			return nil, err
-		}
-		if i == maxRetries {
-			lastErr = err
-		}
-	}
-	return nil, lastErr
+		return delay
+	}))
+	return m, err
 }

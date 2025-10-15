@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"net/http"
 
 	models "github.com/maliven1/metrics/internal/model"
 )
@@ -26,33 +27,33 @@ func (s *PostgreService) Close() {
 func (s *PostgreService) CheckConnection() int {
 	err := s.PostgreRepo.CheckConnection()
 	if err != nil {
-		return models.StatusInternalServerError
+		return http.StatusInternalServerError
 	}
-	return models.StatusOK
+	return http.StatusOK
 }
 
 func (s *PostgreService) SetMetrics(metrics []models.Metrics, ctx context.Context) (int, error) {
 	if metrics == nil {
-		return models.StatusBadRequest, nil
+		return http.StatusBadRequest, nil
 	}
 	for _, v := range metrics {
 		if v.MType == models.Gauge {
 			err := s.PostgreRepo.SetGauge(v.ID, *v.Value, ctx)
 			if err != nil {
-				return models.StatusInternalServerError, err
+				return http.StatusInternalServerError, err
 			}
 
 		} else if v.MType == models.Counter {
 			err := s.PostgreRepo.SetCounter(v.ID, *v.Delta, ctx)
 			if err != nil {
-				return models.StatusInternalServerError, err
+				return http.StatusInternalServerError, err
 			}
 		}
 	}
 
 	gauges, err := s.PostgreRepo.GetAllGauges()
 	if err != nil {
-		return models.StatusInternalServerError, err
+		return http.StatusInternalServerError, err
 	}
 	for key, value := range gauges {
 		s.MemRepo.SetGauge(key, value)
@@ -60,10 +61,10 @@ func (s *PostgreService) SetMetrics(metrics []models.Metrics, ctx context.Contex
 	}
 	counters, err := s.PostgreRepo.GetAllCounters()
 	if err != nil {
-		return models.StatusInternalServerError, nil
+		return http.StatusInternalServerError, nil
 	}
 	for key, value := range counters {
 		s.MemRepo.SetCounter(key, value)
 	}
-	return models.StatusOK, nil
+	return http.StatusOK, nil
 }

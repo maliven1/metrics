@@ -18,17 +18,20 @@ var (
 )
 
 type AgentConfig struct {
-	Address        string `env:"ADDRESS"`
-	ReportInterval int    `env:"REPORT_INTERVAL"`
-	PollInterval   int    `env:"POLL_INTERVAL"`
+	Address string `env:"ADDRESS"`
+	//ReportInterval частота отправки метрик на сервер
+	ReportInterval int `env:"REPORT_INTERVAL"`
+	//PollInterval частота опроса метрик
+	PollInterval int `env:"POLL_INTERVAL"`
 }
 
 type ServerConfig struct {
 	Address         string `env:"ADDRESS"`
 	StoreInterval   int    `env:"STORE_INTERVAL"`
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
-	Restore         bool   `env:"RESTORE"`
-	PostgreDNS      string `env:"DATABASE_DSN"`
+	//Restore нужно ли подгружать ранее сохраненные метрики в файле
+	Restore    bool   `env:"RESTORE"`
+	PostgreDNS string `env:"DATABASE_DSN"`
 }
 
 func parseServerFlags() {

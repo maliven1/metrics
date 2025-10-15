@@ -1,6 +1,7 @@
 package service
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -30,31 +31,31 @@ func TestService_CheckAddPath(t *testing.T) {
 		{
 			name: "ok gauge test",
 			args: args{pathSplit: []string{"localhost:8080", "update", models.Gauge, "SomeMetcrics", "321"}},
-			want: models.StatusOK,
+			want: http.StatusOK,
 		}, {
 			name: "ok counter test",
 			args: args{pathSplit: []string{"localhost:8080", "update", models.Counter, "SomeCounter", "123"}},
-			want: models.StatusOK,
+			want: http.StatusOK,
 		}, {
 			name: "StatusBadRequest test - invalid metric type",
 			args: args{pathSplit: []string{"localhost:8080", "update", "d", "SomeMetcrics", "321"}},
-			want: models.StatusBadRequest,
+			want: http.StatusBadRequest,
 		}, {
 			name: "StatusNotFound test - wrong path length",
 			args: args{pathSplit: []string{"localhost:8080", "update", models.Gauge, "SomeMetcrics"}},
-			want: models.StatusNotFound,
+			want: http.StatusNotFound,
 		}, {
 			name: "StatusNotFound test - wrong path length",
 			args: args{pathSplit: []string{"localhost:8080", "update", models.Gauge, "321"}},
-			want: models.StatusNotFound,
+			want: http.StatusNotFound,
 		}, {
 			name: "StatusBadRequest test - invalid float value",
 			args: args{pathSplit: []string{"localhost:8080", "update", models.Gauge, "SomeMetcrics", "invalid"}},
-			want: models.StatusBadRequest,
+			want: http.StatusBadRequest,
 		}, {
 			name: "StatusBadRequest test - invalid counter value",
 			args: args{pathSplit: []string{"localhost:8080", "update", models.Counter, "SomeCounter", "invalid"}},
-			want: models.StatusBadRequest,
+			want: http.StatusBadRequest,
 		},
 	}
 	for _, tt := range tests {
@@ -83,7 +84,7 @@ func TestService_GetMetric(t *testing.T) {
 				m.EXPECT().GetItemGauge("SomeGauge").Return("SomeGauge", 123.45)
 			},
 			want:       "123.45",
-			wantStatus: models.StatusOK,
+			wantStatus: http.StatusOK,
 		}, {
 			name: "ok counter test",
 			args: args{pathSplit: []string{"localhost:8080", "value", models.Counter, "SomeCounter"}},
@@ -94,7 +95,7 @@ func TestService_GetMetric(t *testing.T) {
 				m.EXPECT().GetItemCounter("SomeCounter").Return("SomeCounter", int64(456))
 			},
 			want:       "456",
-			wantStatus: models.StatusOK,
+			wantStatus: http.StatusOK,
 		}, {
 			name: "StatusNotFound test - invalid metric type",
 			args: args{pathSplit: []string{"localhost:8080", "value", "invalid", "SomeGauge"}},
@@ -105,7 +106,7 @@ func TestService_GetMetric(t *testing.T) {
 				m.EXPECT().GetItemCounter("SomeGauge").Return("", int64(0))
 			},
 			want:       "",
-			wantStatus: models.StatusNotFound,
+			wantStatus: http.StatusNotFound,
 		}, {
 			name: "StatusNotFound test - wrong path length",
 			args: args{pathSplit: []string{"localhost:8080", "value", models.Gauge}},
@@ -113,7 +114,7 @@ func TestService_GetMetric(t *testing.T) {
 
 			},
 			want:       "",
-			wantStatus: models.StatusNotFound,
+			wantStatus: http.StatusNotFound,
 		}, {
 			name: "StatusNotFound test - gauge not found",
 			args: args{pathSplit: []string{"localhost:8080", "value", models.Gauge, "NotFoundGauge"}},
@@ -124,7 +125,7 @@ func TestService_GetMetric(t *testing.T) {
 				m.EXPECT().GetItemCounter("NotFoundGauge").Return("", int64(0))
 			},
 			want:       "",
-			wantStatus: models.StatusNotFound,
+			wantStatus: http.StatusNotFound,
 		}, {
 			name: "StatusNotFound test - counter not found",
 			args: args{pathSplit: []string{"localhost:8080", "value", models.Counter, "NotFoundCounter"}},
@@ -135,7 +136,7 @@ func TestService_GetMetric(t *testing.T) {
 				m.EXPECT().GetItemCounter("NotFoundCounter").Return("", int64(0))
 			},
 			want:       "",
-			wantStatus: models.StatusNotFound,
+			wantStatus: http.StatusNotFound,
 		},
 	}
 	for _, tt := range tests {
