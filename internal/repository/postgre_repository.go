@@ -22,8 +22,10 @@ func LinearBackoff(callback func() error) error {
 	LinearBackoff := 1
 	classifier := pgerrors.NewPostgresErrorClassifier()
 	for i := 0; i <= maxRetries; i++ {
-		time.Sleep(time.Duration(LinearBackoff) * time.Second)
-		LinearBackoff += interval
+		if i != 0 {
+			time.Sleep(time.Duration(LinearBackoff) * time.Second)
+			LinearBackoff += interval
+		}
 		err := callback()
 		if err == nil {
 			return nil
@@ -50,8 +52,11 @@ func (s *Storage) CheckConnection() error {
 	LinearBackoff := 1
 	classifier := pgerrors.NewPostgresErrorClassifier()
 	for i := 0; i <= maxRetries; i++ {
-		time.Sleep(time.Duration(LinearBackoff) * time.Second)
-		LinearBackoff += interval
+		if i != 0 {
+			time.Sleep(time.Duration(LinearBackoff) * time.Second)
+			LinearBackoff += interval
+		}
+
 		err := s.postgre.CheckConnection()
 		if err == nil {
 			return nil
@@ -73,8 +78,10 @@ func (s *Storage) SetGauge(key string, value float64, ctx context.Context) error
 	LinearBackoff := 1
 	classifier := pgerrors.NewPostgresErrorClassifier()
 	for i := 0; i <= maxRetries; i++ {
-		time.Sleep(time.Duration(LinearBackoff) * time.Second)
-		LinearBackoff += interval
+		if i != 0 {
+			time.Sleep(time.Duration(LinearBackoff) * time.Second)
+			LinearBackoff += interval
+		}
 		err := s.postgre.SetGauge(key, value, ctx)
 		if err == nil {
 			return nil
@@ -97,8 +104,10 @@ func (s *Storage) SetCounter(key string, value int64, ctx context.Context) error
 	LinearBackoff := 1
 	classifier := pgerrors.NewPostgresErrorClassifier()
 	for i := 0; i <= maxRetries; i++ {
-		time.Sleep(time.Duration(LinearBackoff) * time.Second)
-		LinearBackoff += interval
+		if i != 0 {
+			time.Sleep(time.Duration(LinearBackoff) * time.Second)
+			LinearBackoff += interval
+		}
 		err := s.postgre.SetCounter(key, value, ctx)
 		if err == nil {
 			return nil
