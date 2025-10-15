@@ -21,8 +21,8 @@ func (s *Storage) Close() error {
 }
 
 func (s *Storage) CheckConnection() error {
-	var delay time.Duration = time.Second // Начальная задержка
-	const increment = 2 * time.Second     // Увеличение задержки на 2 секунды после каждой попытки
+	var delay = time.Second           // Начальная задержка
+	const increment = 2 * time.Second // Увеличение задержки на 2 секунды после каждой попытки
 
 	err := retry.Do(func() error {
 		return s.postgre.CheckConnection()
@@ -35,8 +35,8 @@ func (s *Storage) CheckConnection() error {
 	return err
 }
 func (s *Storage) SetGauge(key string, value float64, ctx context.Context) error {
-	var delay time.Duration = time.Second // Начальная задержка
-	const increment = 2 * time.Second     // Увеличение задержки на 2 секунды после каждой попытки
+	var delay = time.Second           // Начальная задержка
+	const increment = 2 * time.Second // Увеличение задержки на 2 секунды после каждой попытки
 
 	err := retry.Do(func() error {
 		return s.postgre.SetGauge(key, value, ctx)
@@ -50,8 +50,8 @@ func (s *Storage) SetGauge(key string, value float64, ctx context.Context) error
 
 }
 func (s *Storage) SetCounter(key string, value int64, ctx context.Context) error {
-	var delay time.Duration = time.Second // Начальная задержка
-	const increment = 2 * time.Second     // Увеличение задержки на 2 секунды после каждой попытки
+	var delay = time.Second           // Начальная задержка
+	const increment = 2 * time.Second // Увеличение задержки на 2 секунды после каждой попытки
 
 	err := retry.Do(func() error {
 		return s.postgre.SetCounter(key, value, ctx)
@@ -66,8 +66,8 @@ func (s *Storage) SetCounter(key string, value int64, ctx context.Context) error
 }
 
 func (s *Storage) GetAllGauges() (map[string]float64, error) {
-	var delay time.Duration = time.Second // Начальная задержка
-	const increment = 2 * time.Second     // Увеличение задержки на 2 секунды после каждой попытки
+	var delay = time.Second           // Начальная задержка
+	const increment = 2 * time.Second // Увеличение задержки на 2 секунды после каждой попытки
 	m := make(map[string]float64)
 	err := retry.Do(func() error {
 		var err error
@@ -84,8 +84,8 @@ func (s *Storage) GetAllGauges() (map[string]float64, error) {
 }
 
 func (s *Storage) GetAllCounters() (map[string]int64, error) {
-	var delay time.Duration = time.Second // Начальная задержка
-	const increment = 2 * time.Second     // Увеличение задержки на 2 секунды после каждой попытки
+	var delay = time.Second           // Начальная задержка
+	const increment = 2 * time.Second // Увеличение задержки на 2 секунды после каждой попытки
 	m := make(map[string]int64)
 	err := retry.Do(func() error {
 		var err error

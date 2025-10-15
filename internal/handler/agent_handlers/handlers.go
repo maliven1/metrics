@@ -87,8 +87,8 @@ func (s SendClient) SendClientMetrics() {
 }
 
 func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg *sync.WaitGroup) {
-	var delay time.Duration = time.Second // Начальная задержка
-	const increment = 2 * time.Second     // Увеличение задержки на 2 секунды после каждой попытки
+	var delay = time.Second           // Начальная задержка
+	const increment = 2 * time.Second // Увеличение задержки на 2 секунды после каждой попытки
 	endpoint := "http://" + s.cfg.Address + "/updates/"
 	log.Info("start agent on endpoint: ", endpoint)
 	client := &http.Client{}
@@ -177,8 +177,8 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg *sync.Wait
 }
 
 func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg *sync.WaitGroup) {
-	var delay time.Duration = time.Second // Начальная задержка
-	const increment = 2 * time.Second     // Увеличение задержки на 2 секунды после каждой попытки
+	var delay = time.Second           // Начальная задержка
+	const increment = 2 * time.Second // Увеличение задержки на 2 секунды после каждой попытки
 	endpoint := "http://" + s.cfg.Address + "/update/"
 	log.Info("start agent on endpoint: ", endpoint)
 	client := &http.Client{}
