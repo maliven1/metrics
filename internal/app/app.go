@@ -36,7 +36,7 @@ func Run() {
 	} else {
 		usePostgreSQL = true
 	}
-	ctx := context.Background()
+
 	memStorage := storage.NewMemStorage()
 	repo := repository.NewStorage(postgreStorage)
 	cahce := repository.NewCache(memStorage, usePostgreSQL, postgreStorage)
@@ -48,7 +48,7 @@ func Run() {
 	go logic.InitFile(*cfg, log)
 
 	r := chi.NewRouter()
-	router.NewRouter(r, h, log, ctx)
+	router.NewRouter(r, h, log)
 
 	log.Info("serv start on ", cfg.Address, " time:", time.Now())
 	srv := &http.Server{
@@ -68,7 +68,7 @@ func Run() {
 
 	log.Info("Shutdown Server ...", " time:", time.Now())
 	// Завершаем сервер с таймаутом
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	shutdownErr := srv.Shutdown(ctx)

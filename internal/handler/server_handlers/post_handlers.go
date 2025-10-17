@@ -70,21 +70,18 @@ func (h Handler) PostBodyHandler(log *zap.SugaredLogger) http.HandlerFunc {
 
 func (h Handler) PostURLHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
+		w.Header().Set("content-type", "text/plain; charset=utf-8")
 		pathSplit := strings.Split(r.URL.Path, "/")
 		if len(pathSplit) != 5 {
-
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 		err := h.Handler.CheckAddPath(pathSplit)
 		if err != nil {
-
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Header().Set("content-type", "text/plain")
-		w.Header().Add("content-type", "charset=utf-8")
+		w.Write([]byte("OK"))
 	}
 }

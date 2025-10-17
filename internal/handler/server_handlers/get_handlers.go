@@ -51,8 +51,7 @@ func (h Handler) GetBodyMetricHandler(log *zap.SugaredLogger) http.HandlerFunc {
 }
 func (h Handler) GetMetricHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("content-type", "text/plain")
-		w.Header().Add("content-type", "charset=utf-8")
+		w.Header().Set("content-type", "text/plain; charset=utf-8")
 		pathSplit := strings.Split(r.URL.Path, "/")
 		if len(pathSplit) != 4 {
 			w.WriteHeader(http.StatusNotFound)
@@ -61,13 +60,10 @@ func (h Handler) GetMetricHandler() http.HandlerFunc {
 		metrics, err := h.Handler.GetMetric(pathSplit)
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
-
-			render.PlainText(w, r, metrics)
-
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-
+		render.PlainText(w, r, metrics)
 	}
 }
 
