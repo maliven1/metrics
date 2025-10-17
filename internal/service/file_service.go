@@ -66,7 +66,7 @@ func (c *Consumer) Close() error {
 	return c.file.Close()
 }
 
-func (s Service) ReadFileMetrics(cfg config.ServerConfig, log *zap.SugaredLogger) {
+func (s MemService) ReadFileMetrics(cfg config.ServerConfig, log *zap.SugaredLogger) {
 
 	if !cfg.Restore {
 		return
@@ -80,7 +80,6 @@ func (s Service) ReadFileMetrics(cfg config.ServerConfig, log *zap.SugaredLogger
 	for {
 		metrics, err := Consumer.ReadMetric()
 		if err != nil {
-
 			log.Error(err)
 			return
 		}
@@ -88,7 +87,7 @@ func (s Service) ReadFileMetrics(cfg config.ServerConfig, log *zap.SugaredLogger
 	}
 }
 
-func (s Service) WriteFileMetrics(cfg config.ServerConfig, log *zap.SugaredLogger) {
+func (s MemService) WriteFileMetrics(cfg config.ServerConfig, log *zap.SugaredLogger) {
 
 	metrics := &models.Metrics{}
 
@@ -130,7 +129,10 @@ func (s Service) WriteFileMetrics(cfg config.ServerConfig, log *zap.SugaredLogge
 
 }
 
-func (s Service) InitFile(cfg config.ServerConfig, log *zap.SugaredLogger) {
+func (s MemService) InitFile(cfg config.ServerConfig, log *zap.SugaredLogger) {
+	if cfg.FileStoragePath == "" {
+		return
+	}
 	s.ReadFileMetrics(cfg, log)
 	s.WriteFileMetrics(cfg, log)
 }

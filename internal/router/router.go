@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewRouter(r *chi.Mux, handler *serverhandlers.AddHandler, log *zap.SugaredLogger) {
+func NewRouter(r *chi.Mux, handler *serverhandlers.Handler, log *zap.SugaredLogger) {
 	r.Group(func(r chi.Router) {
 		r.Use(func(h http.Handler) http.Handler {
 			return logger.WithLogging(h, log)
@@ -18,13 +18,14 @@ func NewRouter(r *chi.Mux, handler *serverhandlers.AddHandler, log *zap.SugaredL
 		r.Group(func(r chi.Router) {
 
 			r.Use(middlewares.GzipMiddleware(log))
-
 			r.Get(`/`, handler.GetAllMetricsHandler())
 			r.Post(`/value/`, handler.GetBodyMetricHandler(log))
 			r.Post(`/update/`, handler.PostBodyHandler(log))
+			r.Post(`/updates/`, handler.PostMetricsHandler(log))
 		})
 		r.Post(`/update/*`, handler.PostURLHandler())
 		r.Get(`/value/*`, handler.GetMetricHandler())
+		r.Get(`/ping`, handler.PingHandler(log))
 
 	})
 

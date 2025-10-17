@@ -6,14 +6,6 @@ const (
 )
 
 const (
-	StatusBadRequest          = 400
-	StatusOK                  = 200
-	StatusNotFound            = 404
-	StatusCreated             = 201
-	StatusInternalServerError = 500
-)
-
-const (
 	Alloc         = "Alloc"
 	PollCount     = "PollCount"
 	BuckHashSys   = "BuckHashSys"

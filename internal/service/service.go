@@ -7,7 +7,7 @@ import (
 	models "github.com/maliven1/metrics/internal/model"
 )
 
-type MemStorage interface {
+type MemRepo interface {
 	SetGauge(key string, value float64)
 	SetCounter(key string, value int64)
 	AddCounter(key string, value int64) bool
@@ -19,89 +19,109 @@ type MemStorage interface {
 	CheckItemGauge(key string) bool
 }
 
-type Service struct {
-	memStorage MemStorage
+type MemService struct {
+	memStorage MemRepo
 }
 
-func NewService(m MemStorage) *Service {
-	return &Service{memStorage: m}
+func NewService(m MemRepo) *MemService {
+	return &MemService{memStorage: m}
 }
 
 //go:generate mockgen -source=service.go -destination=mocks/mock.go
-func (s Service) AddStructMetric(metric models.Metrics) int {
-
+func (s MemService) AddStructMetric(metric models.Metrics) error {
+	op := "service/AddStructMetric"
 	if metric.MType == models.Gauge && metric.Value != nil {
 
 		s.memStorage.SetGauge(metric.ID, *metric.Value)
-		return models.StatusOK
+
 	} else if metric.MType == models.Counter && metric.Delta != nil {
 
 		if s.memStorage.AddCounter(metric.ID, *metric.Delta) {
-			return models.StatusOK
+			return nil
 		}
 		s.memStorage.SetCounter(metric.ID, *metric.Delta)
-		return models.StatusOK
+
 	} else {
-		return models.StatusBadRequest
+		return fmt.Errorf("path:%s, err: BadRequest", op)
 	}
+	return nil
 }
 
-func (s Service) GetStructMetric(metric models.Metrics) (models.Metrics, int) {
-	if metric.ID == "" {
-		return metric, models.StatusBadRequest
-	}
-
-	if _, v := s.memStorage.GetItemGauge(metric.ID); metric.MType == models.Gauge && s.memStorage.CheckItemGauge(metric.ID) {
+func (s MemService) GetStructMetric(metric models.Metrics) (models.Metrics, error) {
+	op := "service/GetStructMetric"
+	if metric.MType == models.Gauge && s.memStorage.CheckItemGauge(metric.ID) {
+		_, v := s.memStorage.GetItemGauge(metric.ID)
 		metric.Value = &v
-
-		return metric, models.StatusOK
-	} else if _, v := s.memStorage.GetItemCounter(metric.ID); metric.MType == models.Counter && s.memStorage.CheckCounter(metric.ID) {
-
+		return metric, nil
+	} else if metric.MType == models.Counter && s.memStorage.CheckCounter(metric.ID) {
+		_, v := s.memStorage.GetItemCounter(metric.ID)
 		metric.Delta = &v
-
-		return metric, models.StatusOK
+		return metric, nil
 	}
-
-	return metric, models.StatusNotFound
+	return metric, fmt.Errorf("path%s, err: metric NotFound", op)
 }
 
-func (s Service) CheckAddPath(pathSplit []string) int {
-	if len(pathSplit) != 5 {
-		return models.StatusNotFound
+func (s MemService) CheckAddPath(pathSplit []string) error {
+	op := "service/CheckAddPath"
+	// Check if pathSplit has enough elements
+	if len(pathSplit) < 5 {
+		return fmt.Errorf("path: %s, err: BadRequest", op)
 	}
+
 	if float, err := strconv.ParseFloat(pathSplit[4], 64); pathSplit[2] == models.Gauge && err == nil {
 		s.memStorage.SetGauge(pathSplit[3], float)
-		return models.StatusOK
+		return nil
+
 	} else if count, err := strconv.Atoi(pathSplit[4]); pathSplit[2] == models.Counter && err == nil {
 		if s.memStorage.AddCounter(pathSplit[3], int64(count)) {
-			return models.StatusOK
+			return nil
 		}
 		s.memStorage.SetCounter(pathSplit[3], int64(count))
-		return models.StatusOK
-	} else {
-		return models.StatusBadRequest
+		return nil
 	}
+	return fmt.Errorf("path: %s, err: BadRequest", op)
 }
 
-func (s Service) GetMetric(pathSplit []string) (string, int) {
-	if len(pathSplit) != 4 {
-		return "", models.StatusNotFound
+func (s MemService) GetMetric(pathSplit []string) (string, error) {
+	op := "service/GetMetric"
+	// Check if pathSplit has enough elements
+	if len(pathSplit) < 4 {
+		return "", fmt.Errorf("path: %s, err: BadRequest", op)
 	}
-	if name, v := s.memStorage.GetItemGauge(pathSplit[3]); pathSplit[2] == models.Gauge && name != "" {
+
+	if pathSplit[2] == models.Gauge && s.memStorage.CheckItemGauge(pathSplit[3]) {
+		_, v := s.memStorage.GetItemGauge(pathSplit[3])
 		metrics := strconv.FormatFloat(v, 'f', -1, 64)
-		return metrics, models.StatusOK
-	} else if name, v := s.memStorage.GetItemCounter(pathSplit[3]); pathSplit[2] == models.Counter && name != "" {
+		return metrics, nil
+	} else if pathSplit[2] == models.Counter && s.memStorage.CheckCounter(pathSplit[3]) {
+		_, v := s.memStorage.GetItemCounter(pathSplit[3])
 		metrics := fmt.Sprint(v)
-		return metrics, models.StatusOK
+		return metrics, nil
 	}
 
-	return "", models.StatusNotFound
+	return "", fmt.Errorf("path: %s, err: metric NotFound", op)
 }
 
-func (s Service) GetAllMetrics() (map[string]int64, map[string]float64) {
+func (s MemService) GetAllMetrics() (map[string]int64, map[string]float64) {
 
 	counter := s.memStorage.GetCounter()
 	gauge := s.memStorage.GetGauge()
 
 	return counter, gauge
+}
+
+func (s MemService) SetMetrics(metrics []models.Metrics) {
+
+	for _, v := range metrics {
+		if v.MType == models.Gauge {
+			s.memStorage.SetGauge(v.ID, *v.Value)
+
+		} else if v.MType == models.Counter {
+			if !s.memStorage.AddCounter(v.ID, *v.Delta) {
+				s.memStorage.SetCounter(v.ID, *v.Delta)
+			}
+
+		}
+	}
+
 }

@@ -62,7 +62,7 @@ func WithLogging(h http.Handler, log *zap.SugaredLogger) http.Handler {
 		duration := time.Since(start)
 
 		log.Infoln(
-			"uri", r.RequestURI,
+			"url", r.RequestURI,
 			"method", r.Method,
 			"status", responseData.status, // получаем перехваченный код статуса ответа
 			"duration", duration,
