@@ -20,4 +20,6 @@ type Postgre interface {
 	SetCounter(key string, value int64, ctx context.Context) error
 	GetAllGauges() (map[string]float64, error)
 	GetAllCounters() (map[string]int64, error)
+	GetItemGauge(key string) (string, float64, error)
+	GetItemCounter(key string) (string, int64, error)
 }

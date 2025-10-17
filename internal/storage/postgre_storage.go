@@ -197,3 +197,45 @@ func (db *PostgreDB) GetAllCounters() (map[string]int64, error) {
 
 	return counters, nil
 }
+
+func (db *PostgreDB) GetItemGauge(key string) (string, float64, error) {
+	var value float64
+	err := db.DB.QueryRow("SELECT gauge_value FROM metrics WHERE gauge = $1", key).Scan(&value)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", 0, fmt.Errorf("gauge with key %s not found", key)
+		}
+		return "", 0, err
+	}
+	return key, value, nil
+}
+
+func (db *PostgreDB) GetItemCounter(key string) (string, int64, error) {
+	var value int64
+	err := db.DB.QueryRow("SELECT count_value FROM metrics WHERE count = $1", key).Scan(&value)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", 0, fmt.Errorf("counter with key %s not found", key)
+		}
+		return "", 0, err
+	}
+	return key, value, nil
+}
+
+func (db *PostgreDB) CheckItemGauge(key string) (bool, error) {
+	var exists bool
+	err := db.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM metrics WHERE gauge = $1)", key).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}
+
+func (db *PostgreDB) CheckCounter(key string) (bool, error) {
+	var exists bool
+	err := db.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM metrics WHERE count = $1)", key).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}
