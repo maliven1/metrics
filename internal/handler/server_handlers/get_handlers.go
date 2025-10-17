@@ -28,21 +28,24 @@ func (h Handler) GetBodyMetricHandler(log *zap.SugaredLogger) http.HandlerFunc {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		res, status := h.Handler.GetStructMetric(metric)
+		if metric.ID == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		res, err := h.Handler.GetStructMetric(metric)
+		if err != nil {
+			w.WriteHeader(http.StatusNotFound)
+
+			return
+		}
 		resp, err := json.Marshal(res)
 		if err != nil {
 			log.Error("Marshal err: ", err, "status code: ", http.StatusInternalServerError)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		if status == http.StatusOK {
-			w.WriteHeader(status)
 
-			w.Write(resp)
-
-			return
-		}
-		w.WriteHeader(status)
+		w.WriteHeader(http.StatusOK)
 		w.Write(resp)
 	}
 }
@@ -51,15 +54,19 @@ func (h Handler) GetMetricHandler() http.HandlerFunc {
 		w.Header().Set("content-type", "text/plain")
 		w.Header().Add("content-type", "charset=utf-8")
 		pathSplit := strings.Split(r.URL.Path, "/")
-		metrics, status := h.Handler.GetMetric(pathSplit)
-		if status == http.StatusOK {
-			w.WriteHeader(status)
+		if len(pathSplit) != 4 {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		metrics, err := h.Handler.GetMetric(pathSplit)
+		if err != nil {
+			w.WriteHeader(http.StatusNotFound)
 
 			render.PlainText(w, r, metrics)
 
 			return
 		}
-		w.WriteHeader(status)
+		w.WriteHeader(http.StatusOK)
 
 	}
 }
@@ -90,13 +97,13 @@ func (h Handler) GetAllMetricsHandler() http.HandlerFunc {
 func (h Handler) PingHandler(log *zap.SugaredLogger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "text/plain")
-		status := h.PostgreHandler.CheckConnection()
-		if status == http.StatusInternalServerError {
-			log.Error("status cod: ", status, "ping postgreDB failed")
-			w.WriteHeader(status)
+		err := h.PostgreHandler.CheckConnection()
+		if err != nil {
+			log.Error("status cod: ", http.StatusInternalServerError, "ping postgreDB failed")
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		w.WriteHeader(status)
+		w.WriteHeader(http.StatusOK)
 	}
 }

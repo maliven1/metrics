@@ -1,21 +1,19 @@
 package serverhandlers
 
 import (
-	"context"
-
 	models "github.com/maliven1/metrics/internal/model"
 )
 
 type Service interface {
-	CheckAddPath(pathSplit []string) int
-	GetMetric(pathSplit []string) (string, int)
+	CheckAddPath(pathSplit []string) error
+	GetMetric(pathSplit []string) (string, error)
 	GetAllMetrics() (map[string]int64, map[string]float64)
-	AddStructMetric(metric models.Metrics) int
-	GetStructMetric(metric models.Metrics) (models.Metrics, int)
+	AddStructMetric(metric models.Metrics) error
+	GetStructMetric(metric models.Metrics) (models.Metrics, error)
+	SetMetrics(metrics []models.Metrics)
 }
 type PostgreService interface {
-	CheckConnection() int
-	SetMetrics(metrics []models.Metrics, ctx context.Context) (int, error)
+	CheckConnection() error
 }
 
 type Handler struct {

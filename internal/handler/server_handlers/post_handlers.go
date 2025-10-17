@@ -2,7 +2,6 @@ package serverhandlers
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -11,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (h Handler) PostMetricsHandler(ctx context.Context, log *zap.SugaredLogger) http.HandlerFunc {
+func (h Handler) PostMetricsHandler(log *zap.SugaredLogger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "application/json")
 		var buf bytes.Buffer
@@ -24,11 +23,13 @@ func (h Handler) PostMetricsHandler(ctx context.Context, log *zap.SugaredLogger)
 		if err = json.Unmarshal(buf.Bytes(), &metrics); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 		}
-		status, err := h.PostgreHandler.SetMetrics(metrics, ctx)
-		if err != nil {
-			log.Error(err)
+		if metrics == nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
-		w.WriteHeader(status)
+		h.Handler.SetMetrics(metrics)
+
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -50,14 +51,18 @@ func (h Handler) PostBodyHandler(log *zap.SugaredLogger) http.HandlerFunc {
 
 			return
 		}
-		status := h.Handler.AddStructMetric(metric)
+		err = h.Handler.AddStructMetric(metric)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 		resp, err := json.Marshal(metric)
 		if err != nil {
 			log.Error("Marshal err: ", err, "status code: ", http.StatusInternalServerError)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		w.WriteHeader(status)
+		w.WriteHeader(http.StatusOK)
 		w.Write(resp)
 
 	}
@@ -67,8 +72,15 @@ func (h Handler) PostURLHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		pathSplit := strings.Split(r.URL.Path, "/")
-		status := h.Handler.CheckAddPath(pathSplit)
-		w.WriteHeader(status)
+		if len(pathSplit) != 5 {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		err := h.Handler.CheckAddPath(pathSplit)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+		w.WriteHeader(http.StatusOK)
 		w.Header().Set("content-type", "text/plain")
 		w.Header().Add("content-type", "charset=utf-8")
 	}
