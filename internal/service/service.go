@@ -37,7 +37,7 @@ func (s MemService) AddStructMetric(metric models.Metrics) error {
 	} else if metric.MType == models.Counter && metric.Delta != nil {
 
 		if s.memStorage.AddCounter(metric.ID, *metric.Delta) {
-
+			return nil
 		}
 		s.memStorage.SetCounter(metric.ID, *metric.Delta)
 
