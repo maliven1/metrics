@@ -39,7 +39,7 @@ func Run() {
 	ctx := context.Background()
 	memStorage := storage.NewMemStorage()
 	repo := repository.NewStorage(postgreStorage)
-	cahce := repository.NewCache(memStorage, usePostgreSQL)
+	cahce := repository.NewCache(memStorage, usePostgreSQL, postgreStorage)
 
 	postgreService := service.NewPostgreService(repo, cahce)
 	logic := service.NewService(cahce)

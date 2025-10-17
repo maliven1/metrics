@@ -23,7 +23,7 @@ func main() {
 	cfg := config.NewEnvAgentConfig()
 
 	memStorage := storage.NewMemStorage()
-	repo := repository.NewCache(memStorage, false)
+	repo := repository.NewCache(memStorage, false, nil)
 	service := agent.NewAgent(repo, cfg)
 	client := agenthandlers.NewSendClient(service, cfg)
 

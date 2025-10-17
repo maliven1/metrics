@@ -3,14 +3,14 @@ package repository
 import "context"
 
 type MemStorage struct {
-	*Storage
+	postgre       Postgre
 	cache         Cache
 	usePostgreSQL bool
 }
 
-func NewCache(cache Cache, usePostgreSQL bool) *MemStorage {
+func NewCache(cache Cache, usePostgreSQL bool, postgre Postgre) *MemStorage {
 
-	return &MemStorage{cache: cache, usePostgreSQL: usePostgreSQL}
+	return &MemStorage{cache: cache, usePostgreSQL: usePostgreSQL, postgre: postgre}
 }
 
 func (c *MemStorage) CheckCounter(key string) bool {
@@ -22,14 +22,14 @@ func (c *MemStorage) CheckItemGauge(key string) bool {
 
 func (c *MemStorage) SetGauge(key string, value float64) {
 	if c.usePostgreSQL {
-		c.Storage.postgre.SetGauge(key, value, context.Background())
+		c.postgre.SetGauge(key, value, context.Background())
 	}
 	c.cache.SetGauge(key, value)
 }
 
 func (c *MemStorage) SetCounter(key string, value int64) {
 	if c.usePostgreSQL {
-		c.Storage.postgre.SetCounter(key, value, context.Background())
+		c.postgre.SetCounter(key, value, context.Background())
 	}
 	c.cache.SetCounter(key, value)
 }
@@ -50,7 +50,7 @@ func (c *MemStorage) GetCounter() map[string]int64 {
 
 func (c *MemStorage) AddCounter(key string, value int64) bool {
 	if c.usePostgreSQL {
-		c.Storage.postgre.SetCounter(key, value, context.Background())
+		c.postgre.SetCounter(key, value, context.Background())
 	}
 
 	return c.cache.AddCounter(key, value)
