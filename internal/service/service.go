@@ -117,10 +117,9 @@ func (s MemService) SetMetrics(metrics []models.Metrics) {
 			s.memStorage.SetGauge(v.ID, *v.Value)
 
 		} else if v.MType == models.Counter {
-			if s.memStorage.AddCounter(v.ID, *v.Delta) {
-				return
+			if !s.memStorage.AddCounter(v.ID, *v.Delta) {
+				s.memStorage.SetCounter(v.ID, *v.Delta)
 			}
-			s.memStorage.SetCounter(v.ID, *v.Delta)
 
 		}
 	}
