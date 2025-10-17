@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -23,27 +22,27 @@ func Run() {
 	cfg := config.NewEnvServerConfig()
 	log, err := logger.Initialize()
 	if err != nil {
-		fmt.Println(err)
+		log.Info(err)
 		return
 	}
 	defer log.Sync()
 
+	var usePostgreSQL bool
+
 	postgreStorage, err := storage.NewPostgreDB(*cfg, log)
 	if err != nil {
-		fmt.Println(err)
+		log.Info(err)
 
+	} else {
+		usePostgreSQL = true
 	}
 	ctx := context.Background()
 	memStorage := storage.NewMemStorage()
-	cahce := repository.NewCache(memStorage)
+	cahce := repository.NewCache(memStorage, usePostgreSQL)
 	repo := repository.NewStorage(postgreStorage)
 	postgreService := service.NewPostgreService(repo, cahce)
 	logic := service.NewService(cahce)
 	h := serverhandlers.NewHandler(logic, postgreService)
-
-	if postgreStorage != nil {
-		go service.TransferCacheToPostgreSQL(cahce, repo, *cfg, ctx)
-	}
 
 	go logic.InitFile(*cfg, log)
 
@@ -67,7 +66,6 @@ func Run() {
 	<-quit
 
 	log.Info("Shutdown Server ...", " time:", time.Now())
-
 	// Завершаем сервер с таймаутом
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()

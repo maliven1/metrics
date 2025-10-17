@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -19,10 +18,10 @@ type PostgreDB struct {
 }
 
 func NewPostgreDB(cfg config.ServerConfig, log *zap.SugaredLogger) (*PostgreDB, error) {
-	if cfg.PostgreDNS == "" {
-		return nil, fmt.Errorf("PostgreSQL DNS is empty")
+	if cfg.PostgreDSN == "" {
+		return nil, fmt.Errorf("PostgreSQL DSN is empty")
 	}
-	db, err := sql.Open("pgx", cfg.PostgreDNS)
+	db, err := sql.Open("pgx", cfg.PostgreDSN)
 	if err != nil {
 		return nil, err
 	}
@@ -47,10 +46,11 @@ func (db *PostgreDB) CheckConnection() error {
 }
 
 func (db *PostgreDB) SetGauge(key string, value float64, ctx context.Context) error {
+	op := "path: storage/SetGauge."
 	tx, err := db.DB.Begin()
 	if err != nil {
-		log.Println(err)
-		return err
+
+		return fmt.Errorf(op, "starts a transaction err:", err)
 	}
 	defer func() {
 		if err != nil {
@@ -61,8 +61,8 @@ func (db *PostgreDB) SetGauge(key string, value float64, ctx context.Context) er
 	var exists bool
 	err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM metrics WHERE gauge = $1)", key).Scan(&exists)
 	if err != nil {
-		log.Println(err)
-		return err
+
+		return fmt.Errorf(op, "QueryRowContext err:", err)
 	}
 
 	if exists {
@@ -72,23 +72,21 @@ func (db *PostgreDB) SetGauge(key string, value float64, ctx context.Context) er
 	}
 
 	if err != nil {
-		log.Println(err)
-		return err
+		return fmt.Errorf(op, "ExecContext err:", err)
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		log.Println(err)
-		return err
+		return fmt.Errorf(op, "Commit err:", err)
 	}
 	return nil
 }
 
 func (db *PostgreDB) SetCounter(key string, value int64, ctx context.Context) error {
+	op := "path: storage/SetCounter."
 	tx, err := db.DB.Begin()
 	if err != nil {
-		log.Println(err)
-		return err
+		return fmt.Errorf(op, "starts a transaction err:", err)
 	}
 	defer func() {
 		if err != nil {
@@ -99,8 +97,8 @@ func (db *PostgreDB) SetCounter(key string, value int64, ctx context.Context) er
 	var exists bool
 	err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM metrics WHERE count = $1)", key).Scan(&exists)
 	if err != nil {
-		log.Println(err)
-		return err
+
+		return fmt.Errorf(op, "QueryRowContext err:", err)
 	}
 
 	if exists {
@@ -110,14 +108,12 @@ func (db *PostgreDB) SetCounter(key string, value int64, ctx context.Context) er
 	}
 
 	if err != nil {
-		log.Println(err)
-		return err
+		return fmt.Errorf(op, "ExecContext err:", err)
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		log.Println(err)
-		return err
+		return fmt.Errorf(op, "Commit err:", err)
 	}
 	return nil
 }
