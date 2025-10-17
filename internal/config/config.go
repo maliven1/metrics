@@ -39,7 +39,7 @@ func parseServerFlags() {
 	flag.IntVar(&storeInterval, "i", 300, "the time interval after which the current server readings are saved")
 	flag.StringVar(&fileStoragePath, "f", "", "path to the file where the current values are saved")
 	flag.BoolVar(&restore, "r", false, "determines whether previously saved values from the specified file should be loaded when the server starts")
-	flag.StringVar(&postgreDSN, "d", "", "postgres DSN")
+	flag.StringVar(&postgreDSN, "d", "postgres://postgres:12345678@localhost:5432/metrics_db?sslmode=disable", "postgres DSN")
 	flag.Parse()
 }
 func parseAgentFlags() {

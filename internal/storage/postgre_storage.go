@@ -59,7 +59,7 @@ func (db *PostgreDB) SetGauge(key string, value float64, ctx context.Context) er
 	}()
 
 	var exists bool
-	err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM metrics WHERE gauge = $1)", key).Scan(&exists)
+	err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT * FROM metrics WHERE gauge = $1)", key).Scan(&exists)
 	if err != nil {
 
 		return fmt.Errorf("%s QueryRowContext err:%w", op, err)
@@ -95,7 +95,7 @@ func (db *PostgreDB) SetCounter(key string, value int64, ctx context.Context) er
 	}()
 
 	var exists bool
-	err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM metrics WHERE count = $1)", key).Scan(&exists)
+	err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT * FROM metrics WHERE count = $1)", key).Scan(&exists)
 	if err != nil {
 
 		return fmt.Errorf("%s QueryRowContext err:%w", op, err)
