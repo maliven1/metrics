@@ -67,17 +67,16 @@ func (s MemService) CheckAddPath(pathSplit []string) error {
 	op := "service/CheckAddPath"
 	if float, err := strconv.ParseFloat(pathSplit[4], 64); pathSplit[2] == models.Gauge && err == nil {
 		s.memStorage.SetGauge(pathSplit[3], float)
+		return nil
 
 	} else if count, err := strconv.Atoi(pathSplit[4]); pathSplit[2] == models.Counter && err == nil {
 		if s.memStorage.AddCounter(pathSplit[3], int64(count)) {
 			return nil
 		}
 		s.memStorage.SetCounter(pathSplit[3], int64(count))
-
-	} else {
-		return fmt.Errorf("path: %s, err: BadRequest", op)
+		return nil
 	}
-	return nil
+	return fmt.Errorf("path: %s, err: BadRequest", op)
 }
 
 func (s MemService) GetMetric(pathSplit []string) (string, error) {

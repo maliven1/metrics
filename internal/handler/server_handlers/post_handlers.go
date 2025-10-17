@@ -3,6 +3,7 @@ package serverhandlers
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -73,11 +74,13 @@ func (h Handler) PostURLHandler() http.HandlerFunc {
 
 		pathSplit := strings.Split(r.URL.Path, "/")
 		if len(pathSplit) != 5 {
+			fmt.Println("1")
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 		err := h.Handler.CheckAddPath(pathSplit)
 		if err != nil {
+			fmt.Println("2")
 			w.WriteHeader(http.StatusBadRequest)
 		}
 		w.WriteHeader(http.StatusOK)
