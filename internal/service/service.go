@@ -49,22 +49,25 @@ func (s MemService) AddStructMetric(metric models.Metrics) error {
 
 func (s MemService) GetStructMetric(metric models.Metrics) (models.Metrics, error) {
 	op := "service/GetStructMetric"
-	if _, v := s.memStorage.GetItemGauge(metric.ID); metric.MType == models.Gauge && s.memStorage.CheckItemGauge(metric.ID) {
+	if metric.MType == models.Gauge && s.memStorage.CheckItemGauge(metric.ID) {
+		_, v := s.memStorage.GetItemGauge(metric.ID)
 		metric.Value = &v
-
 		return metric, nil
-	} else if _, v := s.memStorage.GetItemCounter(metric.ID); metric.MType == models.Counter && s.memStorage.CheckCounter(metric.ID) {
-
+	} else if metric.MType == models.Counter && s.memStorage.CheckCounter(metric.ID) {
+		_, v := s.memStorage.GetItemCounter(metric.ID)
 		metric.Delta = &v
-
 		return metric, nil
 	}
-
 	return metric, fmt.Errorf("path%s, err: metric NotFound", op)
 }
 
 func (s MemService) CheckAddPath(pathSplit []string) error {
 	op := "service/CheckAddPath"
+	// Check if pathSplit has enough elements
+	if len(pathSplit) < 5 {
+		return fmt.Errorf("path: %s, err: BadRequest", op)
+	}
+
 	if float, err := strconv.ParseFloat(pathSplit[4], 64); pathSplit[2] == models.Gauge && err == nil {
 		s.memStorage.SetGauge(pathSplit[3], float)
 		return nil
@@ -80,11 +83,18 @@ func (s MemService) CheckAddPath(pathSplit []string) error {
 }
 
 func (s MemService) GetMetric(pathSplit []string) (string, error) {
-	op := "service/CheckAddPath"
-	if name, v := s.memStorage.GetItemGauge(pathSplit[3]); pathSplit[2] == models.Gauge && name != "" {
+	op := "service/GetMetric"
+	// Check if pathSplit has enough elements
+	if len(pathSplit) < 4 {
+		return "", fmt.Errorf("path: %s, err: BadRequest", op)
+	}
+
+	if pathSplit[2] == models.Gauge && s.memStorage.CheckItemGauge(pathSplit[3]) {
+		_, v := s.memStorage.GetItemGauge(pathSplit[3])
 		metrics := strconv.FormatFloat(v, 'f', -1, 64)
 		return metrics, nil
-	} else if name, v := s.memStorage.GetItemCounter(pathSplit[3]); pathSplit[2] == models.Counter && name != "" {
+	} else if pathSplit[2] == models.Counter && s.memStorage.CheckCounter(pathSplit[3]) {
+		_, v := s.memStorage.GetItemCounter(pathSplit[3])
 		metrics := fmt.Sprint(v)
 		return metrics, nil
 	}
