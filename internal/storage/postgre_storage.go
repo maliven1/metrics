@@ -50,7 +50,7 @@ func (db *PostgreDB) SetGauge(key string, value float64, ctx context.Context) er
 	tx, err := db.DB.Begin()
 	if err != nil {
 
-		return fmt.Errorf(op, "starts a transaction err:", err)
+		return fmt.Errorf("%s tarts a transaction err:%w", op, err)
 	}
 	defer func() {
 		if err != nil {
@@ -62,7 +62,7 @@ func (db *PostgreDB) SetGauge(key string, value float64, ctx context.Context) er
 	err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM metrics WHERE gauge = $1)", key).Scan(&exists)
 	if err != nil {
 
-		return fmt.Errorf(op, "QueryRowContext err:", err)
+		return fmt.Errorf("%s QueryRowContext err:%w", op, err)
 	}
 
 	if exists {
@@ -72,12 +72,12 @@ func (db *PostgreDB) SetGauge(key string, value float64, ctx context.Context) er
 	}
 
 	if err != nil {
-		return fmt.Errorf(op, "ExecContext err:", err)
+		return fmt.Errorf("%s ExecContext err:%w", op, err)
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return fmt.Errorf(op, "Commit err:", err)
+		return fmt.Errorf("%s Commit err:%w", op, err)
 	}
 	return nil
 }
@@ -86,7 +86,7 @@ func (db *PostgreDB) SetCounter(key string, value int64, ctx context.Context) er
 	op := "path: storage/SetCounter."
 	tx, err := db.DB.Begin()
 	if err != nil {
-		return fmt.Errorf(op, "starts a transaction err:", err)
+		return fmt.Errorf("%s tarts a transaction err:%w", op, err)
 	}
 	defer func() {
 		if err != nil {
@@ -98,7 +98,7 @@ func (db *PostgreDB) SetCounter(key string, value int64, ctx context.Context) er
 	err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM metrics WHERE count = $1)", key).Scan(&exists)
 	if err != nil {
 
-		return fmt.Errorf(op, "QueryRowContext err:", err)
+		return fmt.Errorf("%s QueryRowContext err:%w", op, err)
 	}
 
 	if exists {
@@ -108,12 +108,12 @@ func (db *PostgreDB) SetCounter(key string, value int64, ctx context.Context) er
 	}
 
 	if err != nil {
-		return fmt.Errorf(op, "ExecContext err:", err)
+		return fmt.Errorf("%s ExecContext err:%w", op, err)
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return fmt.Errorf(op, "Commit err:", err)
+		return fmt.Errorf("%s Commit err:%w", op, err)
 	}
 	return nil
 }

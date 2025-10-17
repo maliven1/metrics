@@ -3,12 +3,13 @@ package repository
 import "context"
 
 type MemStorage struct {
-	Storage
+	*Storage
 	cache         Cache
 	usePostgreSQL bool
 }
 
 func NewCache(cache Cache, usePostgreSQL bool) *MemStorage {
+
 	return &MemStorage{cache: cache, usePostgreSQL: usePostgreSQL}
 }
 

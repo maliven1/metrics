@@ -38,8 +38,9 @@ func Run() {
 	}
 	ctx := context.Background()
 	memStorage := storage.NewMemStorage()
-	cahce := repository.NewCache(memStorage, usePostgreSQL)
 	repo := repository.NewStorage(postgreStorage)
+	cahce := repository.NewCache(memStorage, usePostgreSQL)
+
 	postgreService := service.NewPostgreService(repo, cahce)
 	logic := service.NewService(cahce)
 	h := serverhandlers.NewHandler(logic, postgreService)
