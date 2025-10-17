@@ -70,7 +70,7 @@ func (s MemService) CheckAddPath(pathSplit []string) error {
 
 	} else if count, err := strconv.Atoi(pathSplit[4]); pathSplit[2] == models.Counter && err == nil {
 		if s.memStorage.AddCounter(pathSplit[3], int64(count)) {
-
+			return nil
 		}
 		s.memStorage.SetCounter(pathSplit[3], int64(count))
 
