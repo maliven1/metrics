@@ -35,32 +35,20 @@ func (c *MemStorage) SetCounter(key string, value int64) {
 }
 
 func (c *MemStorage) GetGauge() map[string]float64 {
-	if c.usePostgreSQL {
-		m, _ := c.postgre.GetAllGauges()
-		return m
-	}
+
 	return c.cache.GetGauge()
 }
 
 func (c *MemStorage) GetItemGauge(s string) (string, float64) {
-	if c.usePostgreSQL {
-		k, v, _ := c.postgre.GetItemGauge(s)
-		return k, v
-	}
+
 	return c.cache.GetItemGauge(s)
 }
 func (c *MemStorage) GetItemCounter(s string) (string, int64) {
-	if c.usePostgreSQL {
-		k, v, _ := c.postgre.GetItemCounter(s)
-		return k, v
-	}
+
 	return c.cache.GetItemCounter(s)
 }
 func (c *MemStorage) GetCounter() map[string]int64 {
-	if c.usePostgreSQL {
-		m, _ := c.postgre.GetAllCounters()
-		return m
-	}
+
 	return c.cache.GetCounter()
 }
 
