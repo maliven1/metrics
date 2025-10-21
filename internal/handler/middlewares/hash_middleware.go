@@ -19,7 +19,11 @@ func HashMiddleware(log *zap.SugaredLogger, cfg config.ServerConfig) func(http.H
 				h.ServeHTTP(w, r)
 				return
 			}
-
+			for name, headers := range r.Header {
+				for _, header := range headers {
+					log.Info("TEST", w, "%v: %v\n", name, header)
+				}
+			}
 			// Check if the request has a Hash header
 			hashFromHeader := r.Header.Get("Hash")
 			if hashFromHeader == "" {
