@@ -152,7 +152,7 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg *sync.Wait
 					log.Error("Failed to create request: ", err)
 					return nil
 				}
-				hash := s.AddHandler.MakeHash(buf.String(), s.cfg.Key)
+				hash := s.AddHandler.MakeHash(string(data), s.cfg.Key)
 				request.Header.Set("HashSHA256", hash)
 				request.Header.Set("content-type", "application/json")
 				request.Header.Set("Content-Encoding", "gzip")
@@ -230,7 +230,7 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg *sync.WaitG
 					log.Info(err)
 				}
 
-				hash := s.AddHandler.MakeHash(buf.String(), s.cfg.Key)
+				hash := s.AddHandler.MakeHash(string(data), s.cfg.Key)
 				request.Header.Set("HashSHA256", hash)
 
 				request.Header.Set("content-type", "application/json")
@@ -284,7 +284,7 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg *sync.WaitG
 					return err
 				}
 
-				hash := s.AddHandler.MakeHash(buf.String(), s.cfg.Key)
+				hash := s.AddHandler.MakeHash(string(data), s.cfg.Key)
 				request.Header.Set("HashSHA256", hash)
 
 				request.Header.Set("content-type", "application/json")
