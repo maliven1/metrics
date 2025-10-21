@@ -24,6 +24,7 @@ func HashMiddleware(log *zap.SugaredLogger, cfg config.ServerConfig) func(http.H
 			hashFromHeader := r.Header.Get("HashSHA256")
 			if hashFromHeader == "" {
 				log.Errorf("Missing HashSHA256 header")
+				h.ServeHTTP(w, r)
 				return
 			}
 
