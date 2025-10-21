@@ -76,7 +76,7 @@ func (s SendClient) SendClientMetrics() {
 				return
 			}
 			hash := s.AddHandler.MakeHash("", s.cfg.Key)
-			request.Header.Set("Hash", hash)
+			request.Header.Set("HashSHA256", hash)
 			request.Header.Set("Content-Type", "Content-Type: text/plain")
 
 			response, err := client.Do(request)
@@ -153,7 +153,7 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg *sync.Wait
 					return nil
 				}
 				hash := s.AddHandler.MakeHash(string(data), s.cfg.Key)
-				request.Header.Set("Hash", hash)
+				request.Header.Set("HashSHA256", hash)
 				request.Header.Set("content-type", "application/json")
 				request.Header.Set("Content-Encoding", "gzip")
 				request.Header.Set("Accept-Encoding", "gzip")
@@ -231,7 +231,7 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg *sync.WaitG
 				}
 
 				hash := s.AddHandler.MakeHash(string(data), s.cfg.Key)
-				request.Header.Set("Hash", hash)
+				request.Header.Set("HashSHA256", hash)
 
 				request.Header.Set("content-type", "application/json")
 				request.Header.Set("Content-Encoding", "gzip")
@@ -285,7 +285,7 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg *sync.WaitG
 				}
 
 				hash := s.AddHandler.MakeHash(string(data), s.cfg.Key)
-				request.Header.Set("Hash", hash)
+				request.Header.Set("HashSHA256", hash)
 
 				request.Header.Set("content-type", "application/json")
 				request.Header.Set("Content-Encoding", "gzip")
