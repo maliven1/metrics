@@ -20,8 +20,8 @@ func HashMiddleware(log *zap.SugaredLogger, cfg config.ServerConfig) func(http.H
 				return
 			}
 
-			// Check if the request has a HashSHA256 header
-			hashFromHeader := r.Header.Get("HashSHA256")
+			// Check if the request has a Hash header
+			hashFromHeader := r.Header.Get("Hash")
 			if hashFromHeader == "" {
 				log.Errorf("Missing HashSHA256 header")
 				w.WriteHeader(http.StatusBadRequest)
@@ -61,7 +61,7 @@ func HashMiddleware(log *zap.SugaredLogger, cfg config.ServerConfig) func(http.H
 			// Add hash to response headers
 			if crw.Buffer.Len() > 0 {
 				serverHash := MakeHash(crw.Buffer.String(), cfg.Key)
-				w.Header().Set("HashSHA256", serverHash)
+				w.Header().Set("Hash", serverHash)
 			}
 		})
 	}
