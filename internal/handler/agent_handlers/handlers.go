@@ -20,6 +20,7 @@ import (
 type Agent interface {
 	GetMetrics() (map[string]float64, map[string]int64)
 	CollectMetrics()
+	MakeHash(value string, key string) string
 }
 
 type SendClient struct {
@@ -50,7 +51,8 @@ func (s SendClient) SendClientMetrics() {
 				log.Println(err)
 				return
 			}
-
+			hash := s.AddHandler.MakeHash("", s.cfg.Key)
+			request.Header.Set("HashSHA256", hash)
 			request.Header.Set("Content-Type", "Content-Type: text/plain")
 
 			response, err := client.Do(request)
@@ -73,7 +75,8 @@ func (s SendClient) SendClientMetrics() {
 				log.Println(err)
 				return
 			}
-
+			hash := s.AddHandler.MakeHash("", s.cfg.Key)
+			request.Header.Set("HashSHA256", hash)
 			request.Header.Set("Content-Type", "Content-Type: text/plain")
 
 			response, err := client.Do(request)
@@ -149,7 +152,8 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg *sync.Wait
 					log.Error("Failed to create request: ", err)
 					return nil
 				}
-
+				hash := s.AddHandler.MakeHash(buf.String(), s.cfg.Key)
+				request.Header.Set("HashSHA256", hash)
 				request.Header.Set("content-type", "application/json")
 				request.Header.Set("Content-Encoding", "gzip")
 				request.Header.Set("Accept-Encoding", "gzip")
@@ -226,6 +230,9 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg *sync.WaitG
 					log.Info(err)
 				}
 
+				hash := s.AddHandler.MakeHash(buf.String(), s.cfg.Key)
+				request.Header.Set("HashSHA256", hash)
+
 				request.Header.Set("content-type", "application/json")
 				request.Header.Set("Content-Encoding", "gzip")
 				request.Header.Set("Accept-Encoding", "gzip")
@@ -276,6 +283,9 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg *sync.WaitG
 
 					return err
 				}
+
+				hash := s.AddHandler.MakeHash(buf.String(), s.cfg.Key)
+				request.Header.Set("HashSHA256", hash)
 
 				request.Header.Set("content-type", "application/json")
 				request.Header.Set("Content-Encoding", "gzip")

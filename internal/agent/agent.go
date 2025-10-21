@@ -1,6 +1,9 @@
 package agent
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"fmt"
 	"math/rand"
 	"runtime"
 	"time"
@@ -75,4 +78,11 @@ func (a Agent) addMetrics() {
 		return
 	}
 	a.memStorage.SetCounter(models.PollCount, count)
+}
+
+func (a Agent) MakeHash(value string, key string) string {
+	h := hmac.New(sha256.New, []byte(key))
+	h.Write([]byte(value))
+	dst := h.Sum(nil)
+	return fmt.Sprintf("%x", dst)
 }

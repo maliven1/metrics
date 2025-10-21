@@ -48,7 +48,7 @@ func Run() {
 	go logic.InitFile(*cfg, log)
 
 	r := chi.NewRouter()
-	router.NewRouter(r, h, log)
+	router.NewRouter(r, h, log, *cfg)
 
 	log.Info("serv start on ", cfg.Address, " time:", time.Now())
 	srv := &http.Server{
