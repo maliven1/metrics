@@ -20,24 +20,33 @@ func HashMiddleware(log *zap.SugaredLogger, cfg config.ServerConfig) func(http.H
 				return
 			}
 
+			// Check if the request has a HashSHA256 header
+			hashFromHeader := r.Header.Get("HashSHA256")
+			if hashFromHeader == "" {
+				log.Errorf("Missing HashSHA256 header")
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+
 			// Read the request body
 			var buf bytes.Buffer
 			_, err := buf.ReadFrom(r.Body)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
-				log.Error("buf.ReadFrom(r.Body)", http.StatusBadRequest)
+				log.Errorf("Failed to read request body: %v", err)
 				return
 			}
 
 			// Restore the request body for the next handler
 			r.Body = io.NopCloser(bytes.NewReader(buf.Bytes()))
 
-			// Verify the hash
-			serverHash := MakeHash(buf.String(), cfg.Key)
-			hashFromHeader := r.Header.Get("HashSHA256")
-			if serverHash != hashFromHeader {
-				w.WriteHeader(http.StatusBadRequest)
-				return
+			// Verify the hash only if request body is not empty or hash header is present
+			if buf.Len() > 0 || hashFromHeader != "" {
+				serverHash := MakeHash(buf.String(), cfg.Key)
+				if serverHash != hashFromHeader {
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
 			}
 
 			// Create a response writer that captures the response
@@ -50,8 +59,10 @@ func HashMiddleware(log *zap.SugaredLogger, cfg config.ServerConfig) func(http.H
 			h.ServeHTTP(crw, r)
 
 			// Add hash to response headers
-			serverHash = MakeHash(crw.Buffer.String(), cfg.Key)
-			w.Header().Set("HashSHA256", serverHash)
+			if crw.Buffer.Len() > 0 {
+				serverHash := MakeHash(crw.Buffer.String(), cfg.Key)
+				w.Header().Set("HashSHA256", serverHash)
+			}
 		})
 	}
 }
@@ -69,8 +80,7 @@ func (cw *capturingResponseWriter) Write(data []byte) (int, error) {
 }
 
 func (cw *capturingResponseWriter) WriteHeader(statusCode int) {
-	// Set the Content-Length header to ensure proper handling
-	cw.ResponseWriter.Header().Set("Content-Length", fmt.Sprintf("%d", cw.Buffer.Len()))
+	// Do not override Content-Length header as it might conflict with the actual response
 	cw.ResponseWriter.WriteHeader(statusCode)
 }
 
