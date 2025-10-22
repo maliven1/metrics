@@ -96,7 +96,6 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg *sync.Wait
 	log.Info("start agent on endpoint: ", endpoint)
 	client := &http.Client{}
 	go s.AddHandler.CollectMetrics()
-	defer wg.Done()
 
 	for {
 		time.Sleep(time.Duration(s.cfg.ReportInterval) * time.Second)
@@ -152,6 +151,7 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg *sync.Wait
 					log.Error("Failed to create request: ", err)
 					return nil
 				}
+
 				hash := s.AddHandler.MakeHash(string(data), s.cfg.Key)
 				request.Header.Set("HashSHA256", hash)
 				request.Header.Set("content-type", "application/json")
