@@ -19,7 +19,7 @@ import (
 
 type Agent interface {
 	GetMetrics() (map[string]float64, map[string]int64)
-	CollectMetrics()
+	CollectMetrics(m *sync.Mutex)
 	MakeHash(value string, key string) string
 }
 
@@ -35,7 +35,8 @@ func NewSendClient(s Agent, cfg *config.AgentConfig) *SendClient {
 func (s SendClient) SendClientMetrics() {
 	endpoint := "http://" + s.cfg.Address + "/update/"
 	client := &http.Client{}
-	go s.AddHandler.CollectMetrics()
+	var m sync.Mutex
+	go s.AddHandler.CollectMetrics(&m)
 	for {
 		time.Sleep(time.Duration(s.cfg.ReportInterval) * time.Second)
 		gauge, counter := s.AddHandler.GetMetrics()
@@ -92,221 +93,241 @@ func (s SendClient) SendClientMetrics() {
 func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg *sync.WaitGroup) {
 	var delay = time.Second           // Начальная задержка
 	const increment = 2 * time.Second // Увеличение задержки на 2 секунды после каждой попытки
+
 	endpoint := "http://" + s.cfg.Address + "/updates/"
 	log.Info("start agent on endpoint: ", endpoint)
 	client := &http.Client{}
-	go s.AddHandler.CollectMetrics()
+	var m sync.Mutex
+	go s.AddHandler.CollectMetrics(&m)
+	var wgf sync.WaitGroup
+	wgf.Add(s.cfg.RateLimit)
+	for i := 0; i < s.cfg.RateLimit; i++ {
+		fmt.Println("i: ", i)
+		go func() {
+			defer wgf.Done()
 
-	for {
-		time.Sleep(time.Duration(s.cfg.ReportInterval) * time.Second)
-		err := retry.Do(func() error {
-			gauge, counter := s.AddHandler.GetMetrics()
+			time.Sleep(time.Duration(s.cfg.ReportInterval) * time.Second)
+			err := retry.Do(func() error {
+				gauge, counter := s.AddHandler.GetMetrics()
 
-			var metrics []models.Metrics
+				var metrics []models.Metrics
 
-			for i, v := range gauge {
-				if i == "" {
-					return nil
+				for i, v := range gauge {
+					if i == "" {
+						return nil
+					}
+					metric := models.Metrics{MType: models.Gauge, ID: i, Value: &v}
+					metrics = append(metrics, metric)
 				}
-				metric := models.Metrics{MType: models.Gauge, ID: i, Value: &v}
-				metrics = append(metrics, metric)
+
+				for i, v := range counter {
+					if i == "" {
+						return nil
+					}
+					metric := models.Metrics{MType: models.Counter, ID: i, Delta: &v}
+					metrics = append(metrics, metric)
+				}
+
+				if len(metrics) > 0 {
+					data, err := json.Marshal(metrics)
+					if err != nil {
+						log.Error("Failed to marshal metrics batch: ", err)
+						return nil
+					}
+
+					var buf bytes.Buffer
+					gzipWriter := gzip.NewWriter(&buf)
+
+					_, err = gzipWriter.Write(data)
+					if err != nil {
+						log.Error("Failed to write to gzip writer: ", err)
+						return nil
+					}
+					err = gzipWriter.Flush()
+					if err != nil {
+						log.Error("Failed to flush gzip writer: ", err)
+						return nil
+					}
+					err = gzipWriter.Close()
+					if err != nil {
+						log.Error("Failed to close gzip writer: ", err)
+						return nil
+					}
+
+					request, err := http.NewRequest(http.MethodPost, endpoint, &buf)
+					if err != nil {
+						log.Error("Failed to create request: ", err)
+						return nil
+					}
+
+					hash := s.AddHandler.MakeHash(string(data), s.cfg.Key)
+					request.Header.Set("HashSHA256", hash)
+					request.Header.Set("content-type", "application/json")
+					request.Header.Set("Content-Encoding", "gzip")
+					request.Header.Set("Accept-Encoding", "gzip")
+
+					response, err := client.Do(request)
+					if err != nil {
+						log.Info(err)
+						return err
+					}
+					defer response.Body.Close()
+
+				}
+				return nil
+			}, retry.Attempts(3), retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
+				if n > 0 {
+					delay += increment
+				}
+				return delay
+			}))
+			if err != nil {
+				return
 			}
 
-			for i, v := range counter {
-				if i == "" {
-					return nil
-				}
-				metric := models.Metrics{MType: models.Counter, ID: i, Delta: &v}
-				metrics = append(metrics, metric)
-			}
-
-			if len(metrics) > 0 {
-				data, err := json.Marshal(metrics)
-				if err != nil {
-					log.Error("Failed to marshal metrics batch: ", err)
-					return nil
-				}
-
-				var buf bytes.Buffer
-				gzipWriter := gzip.NewWriter(&buf)
-
-				_, err = gzipWriter.Write(data)
-				if err != nil {
-					log.Error("Failed to write to gzip writer: ", err)
-					return nil
-				}
-				err = gzipWriter.Flush()
-				if err != nil {
-					log.Error("Failed to flush gzip writer: ", err)
-					return nil
-				}
-				err = gzipWriter.Close()
-				if err != nil {
-					log.Error("Failed to close gzip writer: ", err)
-					return nil
-				}
-
-				request, err := http.NewRequest(http.MethodPost, endpoint, &buf)
-				if err != nil {
-					log.Error("Failed to create request: ", err)
-					return nil
-				}
-
-				hash := s.AddHandler.MakeHash(string(data), s.cfg.Key)
-				request.Header.Set("HashSHA256", hash)
-				request.Header.Set("content-type", "application/json")
-				request.Header.Set("Content-Encoding", "gzip")
-				request.Header.Set("Accept-Encoding", "gzip")
-
-				response, err := client.Do(request)
-				if err != nil {
-					log.Info(err)
-					return err
-				}
-				defer response.Body.Close()
-
-			}
-			return nil
-		}, retry.Attempts(3), retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
-			if n > 0 {
-				delay += increment
-			}
-			return delay
-		}))
-		if err != nil {
-			return
-		}
+		}()
 	}
+	wgf.Wait()
 
 }
 
 func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg *sync.WaitGroup) {
 	var delay = time.Second           // Начальная задержка
 	const increment = 2 * time.Second // Увеличение задержки на 2 секунды после каждой попытки
+
 	endpoint := "http://" + s.cfg.Address + "/update/"
 	log.Info("start agent on endpoint: ", endpoint)
 	client := &http.Client{}
+
+	var m sync.Mutex
+
 	defer wg.Done()
-	go s.AddHandler.CollectMetrics()
 
-	for {
-		time.Sleep(time.Duration(s.cfg.ReportInterval) * time.Second)
-		err := retry.Do(func() error {
-			gauge, counter := s.AddHandler.GetMetrics()
-			for i, v := range gauge {
-				if i == "" {
-					return nil
+	var wgf sync.WaitGroup
+	go s.AddHandler.CollectMetrics(&m)
+	wgf.Add(s.cfg.RateLimit)
+	for i := 0; i < s.cfg.RateLimit; i++ {
+		go func() {
+			defer wgf.Done()
+			time.Sleep(time.Duration(s.cfg.ReportInterval) * time.Second)
+			err := retry.Do(func() error {
+				gauge, counter := s.AddHandler.GetMetrics()
+				for i, v := range gauge {
+					if i == "" {
+						return nil
+					}
+
+					metric := models.Metrics{MType: models.Gauge, ID: i, Value: &v}
+					data, err := json.Marshal(metric)
+					if err != nil {
+						log.Error(err)
+						return nil
+					}
+
+					var buf bytes.Buffer
+					gzipWriter := gzip.NewWriter(&buf)
+
+					_, err = gzipWriter.Write(data)
+					if err != nil {
+						log.Error(err)
+						return nil
+					}
+					err = gzipWriter.Flush()
+					if err != nil {
+						log.Info(err)
+						return nil
+					}
+					_ = gzipWriter.Close()
+
+					if buf.Len() == 0 {
+						log.Error("Buffer is empty")
+						break
+					}
+
+					request, err := http.NewRequest(http.MethodPost, endpoint, &buf)
+					if err != nil {
+						log.Info(err)
+					}
+
+					hash := s.AddHandler.MakeHash(string(data), s.cfg.Key)
+					request.Header.Set("HashSHA256", hash)
+
+					request.Header.Set("content-type", "application/json")
+					request.Header.Set("Content-Encoding", "gzip")
+					request.Header.Set("Accept-Encoding", "gzip")
+					response, err := client.Do(request)
+					if err != nil {
+						log.Info(err)
+						return err
+					}
+					defer response.Body.Close()
+
 				}
 
-				metric := models.Metrics{MType: models.Gauge, ID: i, Value: &v}
-				data, err := json.Marshal(metric)
-				if err != nil {
-					log.Error(err)
-					return nil
+				for i, v := range counter {
+
+					if i == "" {
+						break
+					}
+
+					metric := models.Metrics{MType: models.Counter, ID: i, Delta: &v}
+					data, err := json.Marshal(metric)
+					if err != nil {
+						log.Info(err)
+
+						return err
+					}
+
+					var buf bytes.Buffer
+
+					gzipWriter := gzip.NewWriter(&buf)
+
+					_, err = gzipWriter.Write(data)
+					if err != nil {
+						log.Info(err)
+
+						return err
+					}
+
+					err = gzipWriter.Flush()
+					if err != nil {
+						log.Info(err)
+
+						return err
+					}
+					_ = gzipWriter.Close()
+					request, err := http.NewRequest(http.MethodPost, endpoint, &buf)
+					if err != nil {
+						log.Info(err)
+
+						return err
+					}
+
+					hash := s.AddHandler.MakeHash(string(data), s.cfg.Key)
+					request.Header.Set("HashSHA256", hash)
+
+					request.Header.Set("content-type", "application/json")
+					request.Header.Set("Content-Encoding", "gzip")
+					request.Header.Set("Accept-Encoding", "gzip")
+
+					response, err := client.Do(request)
+					if err != nil {
+						log.Info(err)
+						return err
+					}
+					defer response.Body.Close()
 				}
-
-				var buf bytes.Buffer
-				gzipWriter := gzip.NewWriter(&buf)
-
-				_, err = gzipWriter.Write(data)
-				if err != nil {
-					log.Error(err)
-					return nil
+				return nil
+			}, retry.Attempts(3), retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
+				if n > 0 {
+					delay += increment
 				}
-				err = gzipWriter.Flush()
-				if err != nil {
-					log.Info(err)
-					return nil
-				}
-				_ = gzipWriter.Close()
-
-				if buf.Len() == 0 {
-					log.Error("Buffer is empty")
-					break
-				}
-
-				request, err := http.NewRequest(http.MethodPost, endpoint, &buf)
-				if err != nil {
-					log.Info(err)
-				}
-
-				hash := s.AddHandler.MakeHash(string(data), s.cfg.Key)
-				request.Header.Set("HashSHA256", hash)
-
-				request.Header.Set("content-type", "application/json")
-				request.Header.Set("Content-Encoding", "gzip")
-				request.Header.Set("Accept-Encoding", "gzip")
-				response, err := client.Do(request)
-				if err != nil {
-					log.Info(err)
-					return err
-				}
-				defer response.Body.Close()
-
+				return delay
+			}))
+			if err != nil {
+				return
 			}
-
-			for i, v := range counter {
-
-				if i == "" {
-					break
-				}
-
-				metric := models.Metrics{MType: models.Counter, ID: i, Delta: &v}
-				data, err := json.Marshal(metric)
-				if err != nil {
-					log.Info(err)
-
-					return err
-				}
-
-				var buf bytes.Buffer
-
-				gzipWriter := gzip.NewWriter(&buf)
-
-				_, err = gzipWriter.Write(data)
-				if err != nil {
-					log.Info(err)
-
-					return err
-				}
-
-				err = gzipWriter.Flush()
-				if err != nil {
-					log.Info(err)
-
-					return err
-				}
-				_ = gzipWriter.Close()
-				request, err := http.NewRequest(http.MethodPost, endpoint, &buf)
-				if err != nil {
-					log.Info(err)
-
-					return err
-				}
-
-				hash := s.AddHandler.MakeHash(string(data), s.cfg.Key)
-				request.Header.Set("HashSHA256", hash)
-
-				request.Header.Set("content-type", "application/json")
-				request.Header.Set("Content-Encoding", "gzip")
-				request.Header.Set("Accept-Encoding", "gzip")
-
-				response, err := client.Do(request)
-				if err != nil {
-					log.Info(err)
-					return err
-				}
-				defer response.Body.Close()
-			}
-			return nil
-		}, retry.Attempts(3), retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
-			if n > 0 {
-				delay += increment
-			}
-			return delay
-		}))
-		if err != nil {
-			return
-		}
+		}()
 	}
+	wgf.Wait()
 }

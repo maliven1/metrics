@@ -16,6 +16,7 @@ var (
 	restore           bool
 	postgreDSN        string
 	key               string
+	rateLimit         int
 )
 
 type AgentConfig struct {
@@ -25,6 +26,7 @@ type AgentConfig struct {
 	//PollInterval частота опроса метрик
 	PollInterval int    `env:"POLL_INTERVAL"`
 	Key          string `env:"KEY"`
+	RateLimit    int    `env:"RATE_LIMIT"`
 }
 
 type ServerConfig struct {
@@ -51,6 +53,7 @@ func parseAgentFlags() {
 	flag.IntVar(&reportInterval, "r", 10, "frequency of sending metrics to the server")
 	flag.IntVar(&pollInterval, "p", 2, "metrics polling frequency")
 	flag.StringVar(&key, "k", "", "hash key")
+	flag.IntVar(&rateLimit, "l", 1, "max RateLimit on agent")
 	flag.Parse()
 
 }
@@ -101,6 +104,9 @@ func NewEnvAgentConfig() *AgentConfig {
 	}
 	if cfg.Key == "" {
 		cfg.Key = key
+	}
+	if cfg.RateLimit == 0 {
+		cfg.RateLimit = rateLimit
 	}
 	return &cfg
 }

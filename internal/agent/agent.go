@@ -4,12 +4,16 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"fmt"
+	"log"
 	"math/rand"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/maliven1/metrics/internal/config"
 	models "github.com/maliven1/metrics/internal/model"
+	"github.com/shirou/gopsutil/v4/cpu"
+	gopsutil "github.com/shirou/gopsutil/v4/mem"
 )
 
 type MemStorage interface {
@@ -33,15 +37,36 @@ func (a Agent) GetMetrics() (map[string]float64, map[string]int64) {
 	return a.memStorage.GetGauge(), a.memStorage.GetCounter()
 }
 
-func (a Agent) CollectMetrics() {
+func (a Agent) CollectMetrics(m *sync.Mutex) {
 	for {
-		a.addMetrics()
+		a.addMetrics(m)
+		go a.gopsutilAddMetrics(m)
 		time.Sleep(time.Duration(a.cfg.PollInterval) * time.Second)
 	}
 
 }
+func (a Agent) gopsutilAddMetrics(m *sync.Mutex) {
+	m.Lock()
+	defer m.Unlock()
+	v, err := gopsutil.VirtualMemory()
+	if err != nil {
+		log.Printf("error: %v", err)
+		return
+	}
 
-func (a Agent) addMetrics() {
+	a.memStorage.SetGauge(models.TotalMemory, float64(v.Total))
+	a.memStorage.SetGauge(models.FreeMemory, float64(v.Free))
+	info, err := cpu.Info()
+	if err != nil {
+		log.Fatal(err)
+	}
+	numCPU := len(info)
+	a.memStorage.SetGauge(models.CPUutilization1, float64(numCPU))
+}
+func (a Agent) addMetrics(m *sync.Mutex) {
+	m.Lock()
+	defer m.Unlock()
+
 	const count int64 = 1
 
 	var mem runtime.MemStats

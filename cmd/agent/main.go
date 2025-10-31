@@ -31,5 +31,6 @@ func main() {
 	wg.Add(1)
 	go client.SendClientJSONMetrics(log, &wg)
 	client.SendClientBatchMetrics(log, &wg)
+
 	wg.Wait()
 }
