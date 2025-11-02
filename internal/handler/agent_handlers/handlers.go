@@ -32,6 +32,28 @@ func NewSendClient(s Agent, cfg *config.AgentConfig) *SendClient {
 	return &SendClient{AddHandler: s, cfg: cfg}
 }
 
+// Semaphore структура семафора
+type Semaphore struct {
+	semaCh chan struct{}
+}
+
+// NewSemaphore создает семафор с буферизованным каналом емкостью maxReq
+func NewSemaphore(maxReq int) *Semaphore {
+	return &Semaphore{
+		semaCh: make(chan struct{}, maxReq),
+	}
+}
+
+// когда горутина запускается, отправляем пустую структуру в канал semaCh
+func (s *Semaphore) Acquire() {
+	s.semaCh <- struct{}{}
+}
+
+// когда горутина завершается, из канала semaCh убирается пустая структура
+func (s *Semaphore) Release() {
+	<-s.semaCh
+}
+
 func (s SendClient) SendClientMetrics() {
 	endpoint := "http://" + s.cfg.Address + "/update/"
 	client := &http.Client{}
@@ -99,12 +121,12 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg *sync.Wait
 	client := &http.Client{}
 	var m sync.Mutex
 	go s.AddHandler.CollectMetrics(&m)
-	var wgf sync.WaitGroup
-	wgf.Add(s.cfg.RateLimit)
-	for i := 0; i < s.cfg.RateLimit; i++ {
-		fmt.Println("i: ", i)
+	semaphore := NewSemaphore(s.cfg.RateLimit)
+
+	for {
+		semaphore.Acquire()
 		go func() {
-			defer wgf.Done()
+			defer semaphore.Release()
 
 			time.Sleep(time.Duration(s.cfg.ReportInterval) * time.Second)
 			err := retry.Do(func() error {
@@ -187,7 +209,6 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg *sync.Wait
 
 		}()
 	}
-	wgf.Wait()
 
 }
 
@@ -202,13 +223,15 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg *sync.WaitG
 	var m sync.Mutex
 
 	defer wg.Done()
+	semaphore := NewSemaphore(s.cfg.RateLimit)
 
-	var wgf sync.WaitGroup
 	go s.AddHandler.CollectMetrics(&m)
-	wgf.Add(s.cfg.RateLimit)
-	for i := 0; i < s.cfg.RateLimit; i++ {
+
+	for {
+		semaphore.Acquire()
+
 		go func() {
-			defer wgf.Done()
+			defer semaphore.Release()
 			time.Sleep(time.Duration(s.cfg.ReportInterval) * time.Second)
 			err := retry.Do(func() error {
 				gauge, counter := s.AddHandler.GetMetrics()
@@ -329,5 +352,5 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg *sync.WaitG
 			}
 		}()
 	}
-	wgf.Wait()
+
 }

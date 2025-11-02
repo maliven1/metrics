@@ -40,7 +40,7 @@ func (a Agent) GetMetrics() (map[string]float64, map[string]int64) {
 func (a Agent) CollectMetrics(m *sync.Mutex) {
 	for {
 		a.addMetrics(m)
-		go a.gopsutilAddMetrics(m)
+		a.gopsutilAddMetrics(m)
 		time.Sleep(time.Duration(a.cfg.PollInterval) * time.Second)
 	}
 
