@@ -117,7 +117,6 @@ func (s SendClient) SendClientMetrics() {
 func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg *sync.WaitGroup) {
 	var delay = time.Second           // Начальная задержка
 	const increment = 2 * time.Second // Увеличение задержки на 2 секунды после каждой попытки
-	semaphore := NewSemaphore(s.cfg.ReportInterval)
 
 	defer wg.Done()
 	endpoint := "http://" + s.cfg.Address + "/updates/"
@@ -125,17 +124,13 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg *sync.Wait
 	client := &http.Client{}
 
 	go s.AddHandler.CollectMetrics()
-
-	for {
-
-		ticker := time.NewTicker(time.Duration(s.cfg.ReportInterval) * time.Second)
-		select {
-
-		case <-ticker.C:
-			semaphore.Acquire()
-			go func() {
-				defer semaphore.Release()
-
+	var w sync.WaitGroup
+	w.Add(s.cfg.RateLimit)
+	for i := 0; i < s.cfg.RateLimit; i++ {
+		go func() {
+			defer w.Done()
+			for {
+				time.Sleep(time.Duration(s.cfg.ReportInterval) * time.Second)
 				err := retry.Do(func() error {
 					gauge, counter := s.AddHandler.GetMetrics()
 
@@ -214,10 +209,10 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg *sync.Wait
 					return
 				}
 
-			}()
-
-		}
+			}
+		}()
 	}
+	w.Wait()
 }
 
 func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg *sync.WaitGroup) {
@@ -229,16 +224,15 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg *sync.WaitG
 	client := &http.Client{}
 
 	defer wg.Done()
-
+	var w sync.WaitGroup
 	go s.AddHandler.CollectMetrics()
+	w.Add(s.cfg.RateLimit)
+	for i := 0; i < s.cfg.RateLimit; i++ {
+		go func() {
+			defer w.Done()
+			for {
 
-	for {
-
-		ticker := time.NewTicker(time.Duration(s.cfg.ReportInterval) * time.Second)
-		select {
-
-		case <-ticker.C:
-			go func() {
+				time.Sleep(time.Duration(s.cfg.ReportInterval) * time.Second)
 
 				err := retry.Do(func() error {
 					gauge, counter := s.AddHandler.GetMetrics()
@@ -357,7 +351,10 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg *sync.WaitG
 				if err != nil {
 					return
 				}
-			}()
-		}
+
+			}
+		}()
+
 	}
+	w.Wait()
 }
