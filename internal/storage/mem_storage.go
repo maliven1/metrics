@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"maps"
 	"sync"
 
 	models "github.com/maliven1/metrics/internal/model"
@@ -35,12 +36,12 @@ func (m *MemStorage) SetCounter(key string, value int64) {
 func (m *MemStorage) GetGauge() map[string]float64 {
 	m.memCache.M.RLock()
 	defer m.memCache.M.RUnlock()
-	return m.memCache.Gauge
+	return maps.Clone(m.memCache.Gauge)
 }
 func (m *MemStorage) GetCounter() map[string]int64 {
 	m.memCache.M.RLock()
 	defer m.memCache.M.RUnlock()
-	return m.memCache.Counter
+	return maps.Clone(m.memCache.Counter)
 }
 func (m *MemStorage) GetItemCounter(s string) (string, int64) {
 	m.memCache.M.RLock()

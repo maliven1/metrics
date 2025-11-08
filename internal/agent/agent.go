@@ -1,9 +1,6 @@
 package agent
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"fmt"
 	"log"
 	"math/rand"
 	"runtime"
@@ -27,45 +24,53 @@ type MemStorage interface {
 type Agent struct {
 	memStorage MemStorage
 	cfg        *config.AgentConfig
+	m          *sync.Mutex
 }
 
 func NewAgent(m MemStorage, cfg *config.AgentConfig) *Agent {
-	return &Agent{memStorage: m, cfg: cfg}
+	var mutex sync.Mutex
+	return &Agent{memStorage: m, cfg: cfg, m: &mutex}
 }
 
 func (a Agent) GetMetrics() (map[string]float64, map[string]int64) {
+
 	return a.memStorage.GetGauge(), a.memStorage.GetCounter()
 }
 
-func (a Agent) CollectMetrics(m *sync.Mutex) {
+func (a Agent) CollectMetrics() {
 	for {
-		a.addMetrics(m)
-		a.gopsutilAddMetrics(m)
+		a.addMetrics()
+		err := a.gopsutilAddMetrics()
+		if err != nil {
+			log.Printf("error: %v", err)
+		}
 		time.Sleep(time.Duration(a.cfg.PollInterval) * time.Second)
 	}
 
 }
-func (a Agent) gopsutilAddMetrics(m *sync.Mutex) {
-	m.Lock()
-	defer m.Unlock()
+func (a Agent) gopsutilAddMetrics() error {
+	a.m.Lock()
+	defer a.m.Unlock()
 	v, err := gopsutil.VirtualMemory()
 	if err != nil {
 		log.Printf("error: %v", err)
-		return
+		return err
 	}
 
 	a.memStorage.SetGauge(models.TotalMemory, float64(v.Total))
 	a.memStorage.SetGauge(models.FreeMemory, float64(v.Free))
 	info, err := cpu.Info()
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("error: %v", err)
+		return err
 	}
 	numCPU := len(info)
 	a.memStorage.SetGauge(models.CPUutilization1, float64(numCPU))
+	return nil
 }
-func (a Agent) addMetrics(m *sync.Mutex) {
-	m.Lock()
-	defer m.Unlock()
+func (a Agent) addMetrics() {
+	a.m.Lock()
+	defer a.m.Unlock()
 
 	const count int64 = 1
 
@@ -103,11 +108,4 @@ func (a Agent) addMetrics(m *sync.Mutex) {
 		return
 	}
 	a.memStorage.SetCounter(models.PollCount, count)
-}
-
-func (a Agent) MakeHash(value string, key string) string {
-	h := hmac.New(sha256.New, []byte(key))
-	h.Write([]byte(value))
-	dst := h.Sum(nil)
-	return fmt.Sprintf("%x", dst)
 }
