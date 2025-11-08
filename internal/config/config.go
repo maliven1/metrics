@@ -15,6 +15,8 @@ var (
 	fileStoragePath   string
 	restore           bool
 	postgreDSN        string
+	key               string
+	rateLimit         int
 )
 
 type AgentConfig struct {
@@ -22,7 +24,9 @@ type AgentConfig struct {
 	//ReportInterval частота отправки метрик на сервер
 	ReportInterval int `env:"REPORT_INTERVAL"`
 	//PollInterval частота опроса метрик
-	PollInterval int `env:"POLL_INTERVAL"`
+	PollInterval int    `env:"POLL_INTERVAL"`
+	Key          string `env:"KEY"`
+	RateLimit    int    `env:"RATE_LIMIT"`
 }
 
 type ServerConfig struct {
@@ -32,6 +36,7 @@ type ServerConfig struct {
 	//Restore нужно ли подгружать ранее сохраненные метрики в файле
 	Restore    bool   `env:"RESTORE"`
 	PostgreDSN string `env:"DATABASE_DSN"`
+	Key        string `env:"KEY"`
 }
 
 func parseServerFlags() {
@@ -39,13 +44,16 @@ func parseServerFlags() {
 	flag.IntVar(&storeInterval, "i", 300, "the time interval after which the current server readings are saved")
 	flag.StringVar(&fileStoragePath, "f", "", "path to the file where the current values are saved")
 	flag.BoolVar(&restore, "r", false, "determines whether previously saved values from the specified file should be loaded when the server starts")
-	flag.StringVar(&postgreDSN, "d", "postgres://postgres:12345678@localhost:5432/metrics_db?sslmode=disable", "postgres DSN")
+	flag.StringVar(&postgreDSN, "d", "", "postgres DSN")
+	flag.StringVar(&key, "k", "", "hash key")
 	flag.Parse()
 }
 func parseAgentFlags() {
 	flag.StringVar(&flagAgentRunAddr, "a", "localhost:8080", "address and port to run server")
 	flag.IntVar(&reportInterval, "r", 10, "frequency of sending metrics to the server")
 	flag.IntVar(&pollInterval, "p", 2, "metrics polling frequency")
+	flag.StringVar(&key, "k", "", "hash key")
+	flag.IntVar(&rateLimit, "l", 1, "max RateLimit on agent")
 	flag.Parse()
 
 }
@@ -70,6 +78,9 @@ func NewEnvServerConfig() *ServerConfig {
 	if cfg.PostgreDSN == "" {
 		cfg.PostgreDSN = postgreDSN
 	}
+	if cfg.Key == "" {
+		cfg.Key = key
+	}
 	return &cfg
 
 }
@@ -91,6 +102,11 @@ func NewEnvAgentConfig() *AgentConfig {
 
 		cfg.ReportInterval = reportInterval
 	}
-
+	if cfg.Key == "" {
+		cfg.Key = key
+	}
+	if cfg.RateLimit == 0 {
+		cfg.RateLimit = rateLimit
+	}
 	return &cfg
 }

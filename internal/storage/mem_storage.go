@@ -1,6 +1,9 @@
 package storage
 
 import (
+	"maps"
+	"sync"
+
 	models "github.com/maliven1/metrics/internal/model"
 )
 
@@ -9,8 +12,8 @@ type MemStorage struct {
 }
 
 func NewMemStorage() *MemStorage {
-
-	memStorage := &models.MemStorage{Gauge: make(map[string]float64), Counter: make(map[string]int64)}
+	var m sync.RWMutex
+	memStorage := &models.MemStorage{Gauge: make(map[string]float64), Counter: make(map[string]int64), M: &m}
 
 	return &MemStorage{
 		memCache: memStorage,
@@ -18,21 +21,31 @@ func NewMemStorage() *MemStorage {
 }
 
 func (m MemStorage) SetGauge(key string, value float64) {
+	m.memCache.M.Lock()
+	defer m.memCache.M.Unlock()
 	m.memCache.Gauge[key] = value
 }
 
 func (m *MemStorage) SetCounter(key string, value int64) {
+	m.memCache.M.Lock()
+	defer m.memCache.M.Unlock()
 	m.memCache.Counter[key] = value
 
 }
 
 func (m *MemStorage) GetGauge() map[string]float64 {
-	return m.memCache.Gauge
+	m.memCache.M.RLock()
+	defer m.memCache.M.RUnlock()
+	return maps.Clone(m.memCache.Gauge)
 }
 func (m *MemStorage) GetCounter() map[string]int64 {
-	return m.memCache.Counter
+	m.memCache.M.RLock()
+	defer m.memCache.M.RUnlock()
+	return maps.Clone(m.memCache.Counter)
 }
 func (m *MemStorage) GetItemCounter(s string) (string, int64) {
+	m.memCache.M.RLock()
+	defer m.memCache.M.RUnlock()
 	v, ok := m.memCache.Counter[s]
 	if ok {
 		return s, v
@@ -40,6 +53,8 @@ func (m *MemStorage) GetItemCounter(s string) (string, int64) {
 	return "", 0
 }
 func (m *MemStorage) GetItemGauge(key string) (string, float64) {
+	m.memCache.M.RLock()
+	defer m.memCache.M.RUnlock()
 	v, ok := m.memCache.Gauge[key]
 	if ok {
 		return key, v
@@ -47,6 +62,8 @@ func (m *MemStorage) GetItemGauge(key string) (string, float64) {
 	return "", 0
 }
 func (m *MemStorage) CheckItemGauge(key string) bool {
+	m.memCache.M.RLock()
+	defer m.memCache.M.RUnlock()
 	_, ok := m.memCache.Gauge[key]
 	if ok {
 		return ok
@@ -54,6 +71,8 @@ func (m *MemStorage) CheckItemGauge(key string) bool {
 	return ok
 }
 func (m *MemStorage) CheckCounter(key string) bool {
+	m.memCache.M.RLock()
+	defer m.memCache.M.RUnlock()
 	_, ok := m.memCache.Counter[key]
 	if ok {
 		return ok
@@ -64,6 +83,8 @@ func (m *MemStorage) CheckCounter(key string) bool {
 }
 
 func (m *MemStorage) AddCounter(key string, value int64) bool {
+	m.memCache.M.Lock()
+	defer m.memCache.M.Unlock()
 	_, ok := m.memCache.Counter[key]
 	if ok {
 		m.memCache.Counter[key] += value
