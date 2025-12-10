@@ -17,6 +17,8 @@ var (
 	postgreDSN        string
 	key               string
 	rateLimit         int
+	auditFilePath     string
+	auditURL          string
 )
 
 type AgentConfig struct {
@@ -34,9 +36,11 @@ type ServerConfig struct {
 	StoreInterval   int    `env:"STORE_INTERVAL"`
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 	//Restore нужно ли подгружать ранее сохраненные метрики в файле
-	Restore    bool   `env:"RESTORE"`
-	PostgreDSN string `env:"DATABASE_DSN"`
-	Key        string `env:"KEY"`
+	Restore       bool   `env:"RESTORE"`
+	PostgreDSN    string `env:"DATABASE_DSN"`
+	Key           string `env:"KEY"`
+	AuditFilePath string `env:"AUDIT_FILE_PATH"`
+	AuditURL      string `env:"AUDIT_URL"`
 }
 
 func parseServerFlags() {
@@ -46,6 +50,8 @@ func parseServerFlags() {
 	flag.BoolVar(&restore, "r", false, "determines whether previously saved values from the specified file should be loaded when the server starts")
 	flag.StringVar(&postgreDSN, "d", "", "postgres DSN")
 	flag.StringVar(&key, "k", "", "hash key")
+	flag.StringVar(&auditFilePath, "audit-file", "", "путь к файлу, в который сохраняются логи аудита")
+	flag.StringVar(&auditURL, "audit-url", "", "URL для отправки логов аудита")
 	flag.Parse()
 }
 func parseAgentFlags() {
@@ -80,6 +86,12 @@ func NewEnvServerConfig() *ServerConfig {
 	}
 	if cfg.Key == "" {
 		cfg.Key = key
+	}
+	if cfg.AuditFilePath == "" {
+		cfg.AuditFilePath = auditFilePath
+	}
+	if cfg.AuditURL == "" {
+		cfg.AuditURL = auditURL
 	}
 	return &cfg
 
