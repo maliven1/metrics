@@ -23,3 +23,5 @@ type Postgre interface {
 	GetItemGauge(key string) (string, float64, error)
 	GetItemCounter(key string) (string, int64, error)
 }
+
+var usePostgre bool

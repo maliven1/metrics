@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"sync"
 
 	"github.com/maliven1/metrics/internal/agent"
@@ -10,6 +11,8 @@ import (
 	"github.com/maliven1/metrics/internal/logger"
 	"github.com/maliven1/metrics/internal/repository"
 	"github.com/maliven1/metrics/internal/storage"
+
+	_ "net/http/pprof"
 )
 
 func main() {
@@ -28,9 +31,11 @@ func main() {
 	client := agenthandlers.NewSendClient(service, cfg)
 
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(3)
 	go client.SendClientJSONMetrics(log, &wg)
 	go client.SendClientBatchMetrics(log, &wg)
-
+	go func() {
+		http.ListenAndServe("localhost:6061", nil)
+	}()
 	wg.Wait()
 }

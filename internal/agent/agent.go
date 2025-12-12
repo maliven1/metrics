@@ -11,6 +11,8 @@ import (
 	models "github.com/maliven1/metrics/internal/model"
 	"github.com/shirou/gopsutil/v4/cpu"
 	gopsutil "github.com/shirou/gopsutil/v4/mem"
+
+	_ "net/http/pprof"
 )
 
 type MemStorage interface {

@@ -9,7 +9,7 @@ type MemStorage struct {
 }
 
 func NewCache(cache Cache, usePostgreSQL bool, postgre Postgre) *MemStorage {
-
+	usePostgre = usePostgreSQL
 	return &MemStorage{cache: cache, usePostgreSQL: usePostgreSQL, postgre: postgre}
 }
 

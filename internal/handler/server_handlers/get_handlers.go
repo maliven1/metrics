@@ -95,7 +95,7 @@ func (h Handler) PingHandler(log *zap.SugaredLogger) http.HandlerFunc {
 		w.Header().Set("content-type", "text/plain")
 		err := h.PostgreHandler.CheckConnection()
 		if err != nil {
-			log.Error("status cod: ", http.StatusInternalServerError, "ping postgreDB failed")
+			log.Info("status cod: ", http.StatusInternalServerError, "ping postgreDB failed")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
