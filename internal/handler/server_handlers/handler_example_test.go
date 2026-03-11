@@ -250,12 +250,12 @@ func ExampleHandler_GetBodyMetricHandler() {
 		"application/json",
 		bytes.NewReader(jsonData),
 	)
-	defer res.Body.Close()
+
 	if err != nil {
 		log.Fatalf("Ошибка добавления метрики: %v\n", err)
 		return
 	}
-
+	defer res.Body.Close()
 	// Теперь запрашиваем её
 	reqMetric := models.Metrics{
 		ID:    "TestGauge",
@@ -314,12 +314,12 @@ func ExampleHandler_GetMetricHandler() {
 		"application/json",
 		bytes.NewReader(jsonData),
 	)
-	defer res.Body.Close()
+
 	if err != nil {
 		log.Fatalf("Ошибка добавления метрики: %v\n", err)
 		return
 	}
-
+	defer res.Body.Close()
 	// Теперь запрашиваем её через URL
 	resp, err := http.Get(server.URL + "/value/counter/TestCounter")
 	if err != nil {
