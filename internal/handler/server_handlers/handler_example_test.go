@@ -245,11 +245,12 @@ func ExampleHandler_GetBodyMetricHandler() {
 		Value: func() *float64 { v := 99.9; return &v }(),
 	}
 	jsonData, _ := json.Marshal(metric)
-	_, err := http.Post(
+	res, err := http.Post(
 		server.URL+"/update/",
 		"application/json",
 		bytes.NewReader(jsonData),
 	)
+	defer res.Body.Close()
 	if err != nil {
 		log.Fatalf("Ошибка добавления метрики: %v\n", err)
 		return
@@ -308,11 +309,12 @@ func ExampleHandler_GetMetricHandler() {
 		Delta: func() *int64 { d := int64(5); return &d }(),
 	}
 	jsonData, _ := json.Marshal(metric)
-	_, err := http.Post(
+	res, err := http.Post(
 		server.URL+"/update/",
 		"application/json",
 		bytes.NewReader(jsonData),
 	)
+	defer res.Body.Close()
 	if err != nil {
 		log.Fatalf("Ошибка добавления метрики: %v\n", err)
 		return
