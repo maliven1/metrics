@@ -10,6 +10,16 @@ import (
 	"go.uber.org/zap"
 )
 
+// PostMetricsHandler godoc
+// @Tags Info
+// @Summary Пакетное обновление метрик
+// @Description Принимает массив метрик в JSON формате и обновляет их все за один запрос
+// @Accept json
+// @Produce json
+// @Param metrics body []model.Metrics true "Массив метрик для обновления"
+// @Success 200 {object} map[string]string "Пример: {\"status\":\"OK\"}"
+// @Failure 400 {object} map[string]string "Пример: {\"status\":\"StatusBadRequest\"}"
+// @Router /updates/ [post]
 func (h Handler) PostMetricsHandler(log *zap.SugaredLogger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "application/json")
@@ -18,6 +28,7 @@ func (h Handler) PostMetricsHandler(log *zap.SugaredLogger) http.HandlerFunc {
 		_, err := buf.ReadFrom(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
+
 			return
 		}
 		if err = json.Unmarshal(buf.Bytes(), &metrics); err != nil {
@@ -33,6 +44,16 @@ func (h Handler) PostMetricsHandler(log *zap.SugaredLogger) http.HandlerFunc {
 	}
 }
 
+// PostBodyHandler godoc
+// @Tags Info
+// @Summary Добавление метрики
+// @Description Принимает метрику в JSON формате и добавляет ее в базу данных
+// @Accept json
+// @Produce json
+// @Param metrics body model.Metrics true "Метрика для добавления"
+// @Success 200 {object} model.Metrics "Пример: {\"id\":\"1\",\"type\":\"gauge\",\"value\":1}"
+// @Failure 400 {object} map[string]string "Пример: {\"status\":\"StatusBadRequest\"}"
+// @Router /update/ [post]
 func (h Handler) PostBodyHandler(log *zap.SugaredLogger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "application/json")
@@ -68,6 +89,22 @@ func (h Handler) PostBodyHandler(log *zap.SugaredLogger) http.HandlerFunc {
 	}
 }
 
+// PostURLHandler godoc
+// @Tags Info
+// @Summary Добавление метрики по URL
+// @Description Обновляет метрику. Поддерживает два формата:
+//  1. JSON (новый) - отправка объекта Metrics в теле запроса
+//  2. URL параметры (старый) - /update/{type}/{name}/{value}
+//
+// @Accept plain
+// @Produce plain
+// @Param type path string true "Тип метрики"
+// @Param name path string true "Имя метрики"
+// @Param value path string true "Значение метрики"
+// @Success 200 {string} string "OK"
+// @Failure 400 {string} string "Bad Request"
+// @Failure 404 {string} string "Not Found"
+// @Router /update/* [post]
 func (h Handler) PostURLHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "text/plain; charset=utf-8")

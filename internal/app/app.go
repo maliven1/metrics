@@ -64,6 +64,8 @@ func Run() {
 			log.Fatalf("listen: %s\n", err)
 		}
 	}()
+
+	// listen on localhost:6060 for pprof
 	go func() {
 		http.ListenAndServe("localhost:6060", nil)
 	}()
