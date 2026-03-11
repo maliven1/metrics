@@ -1,0 +1,354 @@
+{
+    "schemes": [
+        "http"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "API для работы с метриками системы",
+        "title": "Metrics API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/": {
+            "get": {
+                "description": "Возвращает все метрики в формате HTML.",
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "Info"
+                ],
+                "summary": "Получение всех метрик",
+                "responses": {
+                    "200": {
+                        "description": "Все метрики",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/ping": {
+            "get": {
+                "description": "Проверяет соединение с базой данных.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Info"
+                ],
+                "summary": "Проверка соединения с базой данных",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/update/": {
+            "post": {
+                "description": "Принимает метрику в JSON формате и добавляет ее в базу данных",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Info"
+                ],
+                "summary": "Добавление метрики",
+                "parameters": [
+                    {
+                        "description": "Метрика для добавления",
+                        "name": "metrics",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_maliven1_metrics_internal_model.Metrics"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Пример: {\\\"id\\\":\\\"1\\\",\\\"type\\\":\\\"gauge\\\",\\\"value\\\":1}",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_maliven1_metrics_internal_model.Metrics"
+                        }
+                    },
+                    "400": {
+                        "description": "Пример: {\\\"status\\\":\\\"StatusBadRequest\\\"}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/update/{type}/{name}/{value}": {
+            "post": {
+                "description": "Обновляет метрику. Поддерживает два формата:",
+                "consumes": [
+                    "application/json",
+                    "text/plain"
+                ],
+                "produces": [
+                    "application/json",
+                    "text/plain"
+                ],
+                "tags": [
+                    "Info"
+                ],
+                "summary": "Обновление метрики",
+                "parameters": [
+                    {
+                        "description": "Метрика в JSON формате",
+                        "name": "metric",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_maliven1_metrics_internal_model.Metrics"
+                        }
+                    },
+                    {
+                        "enum": [
+                            "gauge",
+                            "counter"
+                        ],
+                        "type": "string",
+                        "description": "Тип метрики",
+                        "name": "type",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Имя метрики",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Значение метрики",
+                        "name": "value",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Строка со статусом OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный запрос: bad gauge value, bad counter value, unknown metric type, metric ID is required, gauge value is required, counter delta is required",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера: store error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/updates/": {
+            "post": {
+                "description": "Принимает массив метрик в JSON формате и обновляет их все за один запрос",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Info"
+                ],
+                "summary": "Пакетное обновление метрик",
+                "parameters": [
+                    {
+                        "description": "Массив метрик для обновления",
+                        "name": "metrics",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_maliven1_metrics_internal_model.Metrics"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Пример: {\\\"status\\\":\\\"OK\\\"}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Пример: {\\\"status\\\":\\\"StatusBadRequest\\\"}",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/value/": {
+            "get": {
+                "description": "Принимает JSON с полями id и type, возвращает структуру метрики с полями ID, Type, Value.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Info"
+                ],
+                "summary": "Получение метрики по JSON",
+                "parameters": [
+                    {
+                        "description": "Метрика для поиска (нужны только id и type)",
+                        "name": "metric",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_maliven1_metrics_internal_model.Metrics"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Метрика",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_maliven1_metrics_internal_model.Metrics"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/value/{type}/{id}": {
+            "get": {
+                "description": "Принимает URL с полями id и type, возвращает структуру метрики с полями ID, Type, Value.",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Info"
+                ],
+                "summary": "Получение метрики по URL",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID метрики",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Тип метрики",
+                        "name": "type",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Метрика",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_maliven1_metrics_internal_model.Metrics"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "github_com_maliven1_metrics_internal_model.Metrics": {
+            "type": "object",
+            "properties": {
+                "delta": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "number"
+                }
+            }
+        }
+    }
+}

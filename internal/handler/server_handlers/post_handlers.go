@@ -16,7 +16,7 @@ import (
 // @Description Принимает массив метрик в JSON формате и обновляет их все за один запрос
 // @Accept json
 // @Produce json
-// @Param metrics body []model.Metrics true "Массив метрик для обновления"
+// @Param metrics body []models.Metrics true "Массив метрик для обновления"
 // @Success 200 {object} map[string]string "Пример: {\"status\":\"OK\"}"
 // @Failure 400 {object} map[string]string "Пример: {\"status\":\"StatusBadRequest\"}"
 // @Router /updates/ [post]
@@ -33,6 +33,7 @@ func (h Handler) PostMetricsHandler(log *zap.SugaredLogger) http.HandlerFunc {
 		}
 		if err = json.Unmarshal(buf.Bytes(), &metrics); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
 		if metrics == nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -50,8 +51,8 @@ func (h Handler) PostMetricsHandler(log *zap.SugaredLogger) http.HandlerFunc {
 // @Description Принимает метрику в JSON формате и добавляет ее в базу данных
 // @Accept json
 // @Produce json
-// @Param metrics body model.Metrics true "Метрика для добавления"
-// @Success 200 {object} model.Metrics "Пример: {\"id\":\"1\",\"type\":\"gauge\",\"value\":1}"
+// @Param metrics body models.Metrics true "Метрика для добавления"
+// @Success 200 {object} models.Metrics "Пример: {\"id\":\"1\",\"type\":\"gauge\",\"value\":1}"
 // @Failure 400 {object} map[string]string "Пример: {\"status\":\"StatusBadRequest\"}"
 // @Router /update/ [post]
 func (h Handler) PostBodyHandler(log *zap.SugaredLogger) http.HandlerFunc {
@@ -89,22 +90,28 @@ func (h Handler) PostBodyHandler(log *zap.SugaredLogger) http.HandlerFunc {
 	}
 }
 
-// PostURLHandler godoc
+// UpdateMetric godoc
 // @Tags Info
-// @Summary Добавление метрики по URL
+// @Summary Обновление метрики
 // @Description Обновляет метрику. Поддерживает два формата:
 //  1. JSON (новый) - отправка объекта Metrics в теле запроса
 //  2. URL параметры (старый) - /update/{type}/{name}/{value}
 //
+// @Accept json
 // @Accept plain
+// @Produce json
 // @Produce plain
-// @Param type path string true "Тип метрики"
+// @Param metric body models.Metrics false "Метрика в JSON формате"
+// @Param type path string true "Тип метрики" Enums(gauge, counter)
 // @Param name path string true "Имя метрики"
 // @Param value path string true "Значение метрики"
-// @Success 200 {string} string "OK"
-// @Failure 400 {string} string "Bad Request"
+// @Success 200 {object} map[string]string "Объект со статусом OK"
+// @Success 200 {string} string "Строка со статусом OK"
+// @Failure 400 {string} string "Неверный запрос"
+// @Failure 400 {string} string "Неверный запрос: bad gauge value, bad counter value, unknown metric type, metric ID is required, gauge value is required, counter delta is required"
 // @Failure 404 {string} string "Not Found"
-// @Router /update/* [post]
+// @Failure 500 {string} string "Внутренняя ошибка сервера: store error"
+// @Router /update/{type}/{name}/{value} [post]
 func (h Handler) PostURLHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "text/plain; charset=utf-8")

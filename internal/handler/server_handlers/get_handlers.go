@@ -72,7 +72,7 @@ func (h Handler) GetBodyMetricHandler(log *zap.SugaredLogger) http.HandlerFunc {
 // @Success 200 {object} models.Metrics "Метрика"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 404 {string} string "Not Found"
-// @Router /value/ID/type [get]
+// @Router /value/{type}/{id} [get]
 func (h Handler) GetMetricHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "text/plain; charset=utf-8")
