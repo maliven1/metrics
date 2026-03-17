@@ -14,6 +14,7 @@
 ```
 git remote add -m v2 template https://github.com/Yandex-Practicum/go-musthave-metrics-tpl.git
 ```
+.
 
 Для обновления кода автотестов выполните команду:
 
