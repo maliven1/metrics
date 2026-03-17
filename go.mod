@@ -1,6 +1,6 @@
 module github.com/maliven1/metrics
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
