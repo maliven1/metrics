@@ -77,9 +77,12 @@ func AuditMiddleware(log *zap.SugaredLogger, cfg config.ServerConfig) func(next 
 				return
 			}
 
-			auditReceivers := []AuditReceiver{
-				&FileAuditReceiver{FilePath: cfg.AuditFilePath},
-				&URLAuditReceiver{URL: cfg.AuditURL},
+			auditReceivers := make([]AuditReceiver, 0, 2)
+			if cfg.AuditFilePath != "" {
+				auditReceivers = append(auditReceivers, &FileAuditReceiver{FilePath: cfg.AuditFilePath})
+			}
+			if cfg.AuditURL != "" {
+				auditReceivers = append(auditReceivers, &URLAuditReceiver{URL: cfg.AuditURL})
 			}
 
 			var buf bytes.Buffer

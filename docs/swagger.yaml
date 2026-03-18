@@ -1,0 +1,239 @@
+basePath: /
+definitions:
+  github_com_maliven1_metrics_internal_model.Metrics:
+    properties:
+      delta:
+        type: integer
+      id:
+        type: string
+      type:
+        type: string
+      value:
+        type: number
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API для работы с метриками системы
+  title: Metrics API
+  version: "1.0"
+paths:
+  /:
+    get:
+      description: Возвращает все метрики в формате HTML.
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: Все метрики
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Получение всех метрик
+      tags:
+      - Info
+  /ping:
+    get:
+      description: Проверяет соединение с базой данных.
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Проверка соединения с базой данных
+      tags:
+      - Info
+  /update/:
+    post:
+      consumes:
+      - application/json
+      description: Принимает метрику в JSON формате и добавляет ее в базу данных
+      parameters:
+      - description: Метрика для добавления
+        in: body
+        name: metrics
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_maliven1_metrics_internal_model.Metrics'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Пример: {\"id\":\"1\",\"type\":\"gauge\",\"value\":1}'
+          schema:
+            $ref: '#/definitions/github_com_maliven1_metrics_internal_model.Metrics'
+        "400":
+          description: 'Пример: {\"status\":\"StatusBadRequest\"}'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Добавление метрики
+      tags:
+      - Info
+  /update/{type}/{name}/{value}:
+    post:
+      consumes:
+      - application/json
+      - text/plain
+      description: 'Обновляет метрику. Поддерживает два формата:'
+      parameters:
+      - description: Метрика в JSON формате
+        in: body
+        name: metric
+        schema:
+          $ref: '#/definitions/github_com_maliven1_metrics_internal_model.Metrics'
+      - description: Тип метрики
+        enum:
+        - gauge
+        - counter
+        in: path
+        name: type
+        required: true
+        type: string
+      - description: Имя метрики
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Значение метрики
+        in: path
+        name: value
+        required: true
+        type: string
+      produces:
+      - application/json
+      - text/plain
+      responses:
+        "200":
+          description: Строка со статусом OK
+          schema:
+            type: string
+        "400":
+          description: 'Неверный запрос: bad gauge value, bad counter value, unknown
+            metric type, metric ID is required, gauge value is required, counter delta
+            is required'
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: 'Внутренняя ошибка сервера: store error'
+          schema:
+            type: string
+      summary: Обновление метрики
+      tags:
+      - Info
+  /updates/:
+    post:
+      consumes:
+      - application/json
+      description: Принимает массив метрик в JSON формате и обновляет их все за один
+        запрос
+      parameters:
+      - description: Массив метрик для обновления
+        in: body
+        name: metrics
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/github_com_maliven1_metrics_internal_model.Metrics'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Пример: {\"status\":\"OK\"}'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: 'Пример: {\"status\":\"StatusBadRequest\"}'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Пакетное обновление метрик
+      tags:
+      - Info
+  /value/:
+    get:
+      consumes:
+      - application/json
+      description: Принимает JSON с полями id и type, возвращает структуру метрики
+        с полями ID, Type, Value.
+      parameters:
+      - description: Метрика для поиска (нужны только id и type)
+        in: body
+        name: metric
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_maliven1_metrics_internal_model.Metrics'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Метрика
+          schema:
+            $ref: '#/definitions/github_com_maliven1_metrics_internal_model.Metrics'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Получение метрики по JSON
+      tags:
+      - Info
+  /value/{type}/{id}:
+    get:
+      consumes:
+      - text/plain
+      description: Принимает URL с полями id и type, возвращает структуру метрики
+        с полями ID, Type, Value.
+      parameters:
+      - description: ID метрики
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Тип метрики
+        in: path
+        name: type
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Метрика
+          schema:
+            $ref: '#/definitions/github_com_maliven1_metrics_internal_model.Metrics'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Получение метрики по URL
+      tags:
+      - Info
+schemes:
+- http
+swagger: "2.0"

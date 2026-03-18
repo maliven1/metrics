@@ -1,72 +1,69 @@
+// Package tests содержит примеры использования HTTP-хендлеров метрик.
+// Демонстрирует основные сценарии работы с API системы мониторинга.
 package serverhandlers_test
 
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http/httptest"
 
+	"log"
+
+	"go.uber.org/zap"
+
 	"github.com/go-chi/chi"
-	"github.com/maliven1/metrics/internal/config"
 	serverhandlers "github.com/maliven1/metrics/internal/handler/server_handlers"
-	"github.com/maliven1/metrics/internal/logger"
 	models "github.com/maliven1/metrics/internal/model"
 	"github.com/maliven1/metrics/internal/repository"
 	"github.com/maliven1/metrics/internal/service"
 	"github.com/maliven1/metrics/internal/storage"
-	"go.uber.org/zap"
 
 	"net/http"
 )
 
-func createTestServer(handler *serverhandlers.Handler, log *zap.SugaredLogger, cfg config.ServerConfig) *httptest.Server {
+// createTestServer создает тестовый HTTP сервер с настроенными маршрутами.
+func createTestServer(handler *serverhandlers.Handler) *httptest.Server {
 	r := chi.NewRouter()
+
+	logger := zap.NewNop().Sugar()
 
 	r.Get(`/`, handler.GetAllMetricsHandler())
 
-	r.Post(`/value/`, handler.GetBodyMetricHandler(log))
-
-	r.Post(`/updates/`, handler.PostMetricsHandler(log))
+	r.Post(`/value/`, handler.GetBodyMetricHandler(logger))
+	r.Post(`/updates/`, handler.PostMetricsHandler(logger))
 	r.Post(`/update/*`, handler.PostURLHandler())
-	r.Post(`/update/`, handler.PostBodyHandler(log))
+	r.Post(`/update/`, handler.PostBodyHandler(logger))
 
 	r.Get(`/value/*`, handler.GetMetricHandler())
-	r.Get(`/ping`, handler.PingHandler(log))
+	r.Get(`/ping`, handler.PingHandler(logger))
 
 	return httptest.NewServer(r)
 }
 
+// Пример пакетного обновления метрик.
+// Демонстрирует использование эндпоинта /updates для массового обновления.
 func ExampleHandler_PostMetricsHandler() {
-	cfg := config.NewEnvServerConfig()
-	log, err := logger.Initialize()
-	if err != nil {
-		log.Info(err)
-		return
-	}
-	defer log.Sync()
+	//Инициализация зависимостей
 
-	var usePostgreSQL bool
-
-	postgreStorage, err := storage.NewPostgreDB(*cfg, log)
-	if err != nil {
-		log.Info(err)
-
-	} else {
-		usePostgreSQL = true
-	}
 	memStorage := storage.NewMemStorage()
-	repo := repository.NewStorage(postgreStorage)
-	cache := repository.NewCache(memStorage, usePostgreSQL, postgreStorage)
+	repo := repository.NewStorage(nil)
+	cache := repository.NewCache(memStorage, false, nil)
 
 	postgreService := service.NewPostgreService(repo, cache)
 	logic := service.NewService(cache)
 	h := serverhandlers.NewHandler(logic, postgreService)
-	server := createTestServer(h, log, *cfg)
 
+	// Создание тестового сервера
+	server := createTestServer(h)
+	defer server.Close()
+
+	// Отправка запроса на обновление метрик
 	metrics := []models.Metrics{
 		{
 			ID:    "Alloc",
 			MType: "gauge",
-			Value: func() *float64 { v := 1234.56; return &v }(),
+			Value: func() *float64 { v := 12.6; return &v }(),
 		},
 		{
 			ID:    "PollCount",
@@ -90,21 +87,291 @@ func ExampleHandler_PostMetricsHandler() {
 
 	// Check status code before processing response
 	if resp.StatusCode != http.StatusOK {
-		log.Errorf("Unexpected status code: %d", resp.StatusCode)
+		log.Printf("Unexpected status code: %d", resp.StatusCode)
 		return
 	}
 
-	var response map[string]string
-	err = json.NewDecoder(resp.Body).Decode(&response)
-	if err != nil {
-		log.Errorf("Failed to decode response: %v", err)
-		return
-	}
-
-	json.NewDecoder(resp.Body).Decode(&response)
-	log.Infof("Status: %d\n", resp.StatusCode)
+	fmt.Printf("Status: %d\n", resp.StatusCode)
 
 	// Output:
 	// Status: 200
 
+}
+
+// Пример получения всех метрик.
+// Демонстрирует использование эндпоинта / для получения списка всех метрик.
+func ExampleHandler_GetAllMetricsHandler() {
+	// Инициализация зависимостей
+	memStorage := storage.NewMemStorage()
+	repo := repository.NewStorage(nil)
+	cache := repository.NewCache(memStorage, false, nil)
+
+	postgreService := service.NewPostgreService(repo, cache)
+	logic := service.NewService(cache)
+	h := serverhandlers.NewHandler(logic, postgreService)
+
+	// Создание тестового сервера
+	server := createTestServer(h)
+	defer server.Close()
+
+	// Отправка запроса на получение всех метрик
+	resp, err := http.Get(server.URL + "/")
+	if err != nil {
+		log.Fatalf("Ошибка отправки запроса: %v\n", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Check status code before processing response
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Unexpected status code: %d", resp.StatusCode)
+		return
+	}
+
+	fmt.Printf("Status: %d\n", resp.StatusCode)
+
+	// Output:
+	// Status: 200
+}
+
+// Пример добавления метрики через JSON тело.
+// Демонстрирует использование эндпоинта /update/ для добавления метрики.
+func ExampleHandler_PostBodyHandler() {
+	// Инициализация зависимостей
+	memStorage := storage.NewMemStorage()
+	repo := repository.NewStorage(nil)
+	cache := repository.NewCache(memStorage, false, nil)
+
+	postgreService := service.NewPostgreService(repo, cache)
+	logic := service.NewService(cache)
+	h := serverhandlers.NewHandler(logic, postgreService)
+
+	// Создание тестового сервера
+	server := createTestServer(h)
+	defer server.Close()
+
+	// Подготовка метрики
+	metric := models.Metrics{
+		ID:    "TestGauge",
+		MType: "gauge",
+		Value: func() *float64 { v := 42.0; return &v }(),
+	}
+
+	jsonData, _ := json.Marshal(metric)
+
+	resp, err := http.Post(
+		server.URL+"/update/",
+		"application/json",
+		bytes.NewReader(jsonData),
+	)
+	if err != nil {
+		log.Fatalf("Ошибка отправки запроса: %v\n", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Check status code before processing response
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Unexpected status code: %d", resp.StatusCode)
+		return
+	}
+
+	fmt.Printf("Status: %d\n", resp.StatusCode)
+
+	// Output:
+	// Status: 200
+}
+
+// Пример обновления метрики через URL параметры.
+// Демонстрирует использование эндпоинта /update/{type}/{name}/{value}.
+func ExampleHandler_PostURLHandler() {
+	// Инициализация зависимостей
+	memStorage := storage.NewMemStorage()
+	repo := repository.NewStorage(nil)
+	cache := repository.NewCache(memStorage, false, nil)
+
+	postgreService := service.NewPostgreService(repo, cache)
+	logic := service.NewService(cache)
+	h := serverhandlers.NewHandler(logic, postgreService)
+
+	// Создание тестового сервера
+	server := createTestServer(h)
+	defer server.Close()
+
+	// Отправка запроса на обновление метрики gauge
+	resp, err := http.Post(
+		server.URL+"/update/gauge/TestGauge/123.45",
+		"text/plain",
+		nil,
+	)
+	if err != nil {
+		log.Fatalf("Ошибка отправки запроса: %v\n", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Check status code before processing response
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Unexpected status code: %d", resp.StatusCode)
+		return
+	}
+
+	fmt.Printf("Status: %d\n", resp.StatusCode)
+
+	// Output:
+	// Status: 200
+}
+
+// Пример получения метрики через JSON тело.
+// Демонстрирует использование эндпоинта /value/ для получения метрики.
+func ExampleHandler_GetBodyMetricHandler() {
+	// Инициализация зависимостей
+	memStorage := storage.NewMemStorage()
+	repo := repository.NewStorage(nil)
+	cache := repository.NewCache(memStorage, false, nil)
+
+	postgreService := service.NewPostgreService(repo, cache)
+	logic := service.NewService(cache)
+	h := serverhandlers.NewHandler(logic, postgreService)
+
+	// Создание тестового сервера
+	server := createTestServer(h)
+	defer server.Close()
+
+	// Сначала добавляем метрику, чтобы она существовала
+	metric := models.Metrics{
+		ID:    "TestGauge",
+		MType: "gauge",
+		Value: func() *float64 { v := 99.9; return &v }(),
+	}
+	jsonData, _ := json.Marshal(metric)
+	res, err := http.Post(
+		server.URL+"/update/",
+		"application/json",
+		bytes.NewReader(jsonData),
+	)
+
+	if err != nil {
+		log.Fatalf("Ошибка добавления метрики: %v\n", err)
+		return
+	}
+	defer res.Body.Close()
+	// Теперь запрашиваем её
+	reqMetric := models.Metrics{
+		ID:    "TestGauge",
+		MType: "gauge",
+	}
+	reqData, _ := json.Marshal(reqMetric)
+
+	resp, err := http.Post(
+		server.URL+"/value/",
+		"application/json",
+		bytes.NewReader(reqData),
+	)
+	if err != nil {
+		log.Fatalf("Ошибка отправки запроса: %v\n", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Check status code before processing response
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Unexpected status code: %d", resp.StatusCode)
+		return
+	}
+
+	fmt.Printf("Status: %d\n", resp.StatusCode)
+
+	// Output:
+	// Status: 200
+}
+
+// Пример получения метрики через URL параметры.
+// Демонстрирует использование эндпоинта /value/{type}/{id}.
+func ExampleHandler_GetMetricHandler() {
+	// Инициализация зависимостей
+	memStorage := storage.NewMemStorage()
+	repo := repository.NewStorage(nil)
+	cache := repository.NewCache(memStorage, false, nil)
+
+	postgreService := service.NewPostgreService(repo, cache)
+	logic := service.NewService(cache)
+	h := serverhandlers.NewHandler(logic, postgreService)
+
+	// Создание тестового сервера
+	server := createTestServer(h)
+	defer server.Close()
+
+	// Сначала добавляем метрику, чтобы она существовала
+	metric := models.Metrics{
+		ID:    "TestCounter",
+		MType: "counter",
+		Delta: func() *int64 { d := int64(5); return &d }(),
+	}
+	jsonData, _ := json.Marshal(metric)
+	res, err := http.Post(
+		server.URL+"/update/",
+		"application/json",
+		bytes.NewReader(jsonData),
+	)
+
+	if err != nil {
+		log.Fatalf("Ошибка добавления метрики: %v\n", err)
+		return
+	}
+	defer res.Body.Close()
+	// Теперь запрашиваем её через URL
+	resp, err := http.Get(server.URL + "/value/counter/TestCounter")
+	if err != nil {
+		log.Fatalf("Ошибка отправки запроса: %v\n", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Check status code before processing response
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Unexpected status code: %d", resp.StatusCode)
+		return
+	}
+
+	fmt.Printf("Status: %d\n", resp.StatusCode)
+
+	// Output:
+	// Status: 200
+}
+
+// Пример проверки соединения с базой данных.
+// Демонстрирует использование эндпоинта /ping.
+func ExampleHandler_PingHandler() {
+	// Инициализация зависимостей
+	memStorage := storage.NewMemStorage()
+	repo := repository.NewStorage(nil)
+	cache := repository.NewCache(memStorage, false, nil)
+
+	postgreService := service.NewPostgreService(repo, cache)
+	logic := service.NewService(cache)
+	h := serverhandlers.NewHandler(logic, postgreService)
+
+	// Создание тестового сервера
+	server := createTestServer(h)
+	defer server.Close()
+
+	// Отправка запроса на проверку соединения
+	resp, err := http.Get(server.URL + "/ping")
+	if err != nil {
+		log.Fatalf("Ошибка отправки запроса: %v\n", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Check status code before processing response
+	if resp.StatusCode != http.StatusInternalServerError {
+		log.Printf("Unexpected status code: %d", resp.StatusCode)
+		return
+	}
+
+	fmt.Printf("Status: %d\n", resp.StatusCode)
+
+	// Output:
+	// Status: 500
 }
