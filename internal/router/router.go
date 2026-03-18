@@ -21,13 +21,17 @@ func NewRouter(r *chi.Mux, handler *serverhandlers.Handler, log *zap.SugaredLogg
 			r.Use(middlewares.GzipMiddleware(log))
 
 			r.Get(`/`, handler.GetAllMetricsHandler())
-			r.Post(`/value/`, handler.GetBodyMetricHandler(log))
 			r.Group(func(r chi.Router) {
-				r.Use(middlewares.HashMiddleware(log, cfg))
+				r.Use(middlewares.AuditMiddleware(log, cfg))
 
-				r.Post(`/updates/`, handler.PostMetricsHandler(log))
-				r.Post(`/update/*`, handler.PostURLHandler())
-				r.Post(`/update/`, handler.PostBodyHandler(log))
+				r.Post(`/value/`, handler.GetBodyMetricHandler(log))
+				r.Group(func(r chi.Router) {
+					r.Use(middlewares.HashMiddleware(log, cfg))
+
+					r.Post(`/updates/`, handler.PostMetricsHandler(log))
+					r.Post(`/update/*`, handler.PostURLHandler())
+					r.Post(`/update/`, handler.PostBodyHandler(log))
+				})
 			})
 		})
 
