@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/avast/retry-go"
@@ -21,6 +22,9 @@ func (s *Storage) Close() error {
 }
 
 func (s *Storage) CheckConnection() error {
+	if !usePostgre {
+		return fmt.Errorf("postgres is not used")
+	}
 	var delay = time.Second           // Начальная задержка
 	const increment = 2 * time.Second // Увеличение задержки на 2 секунды после каждой попытки
 

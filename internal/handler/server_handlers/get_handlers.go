@@ -11,6 +11,17 @@ import (
 	"go.uber.org/zap"
 )
 
+// GetBodyMetricHandler godoc
+// @Tags Info
+// @Summary Получение метрики по JSON
+// @Description Принимает JSON с полями id и type, возвращает структуру метрики с полями ID, Type, Value.
+// @Accept json
+// @Produce json
+// @Param metric body models.Metrics true "Метрика для поиска (нужны только id и type)"
+// @Success 200 {object} models.Metrics "Метрика"
+// @Failure 400 {string} string "Bad Request"
+// @Failure 404 {string} string "Not Found"
+// @Router /value/ [get]
 func (h Handler) GetBodyMetricHandler(log *zap.SugaredLogger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -49,12 +60,25 @@ func (h Handler) GetBodyMetricHandler(log *zap.SugaredLogger) http.HandlerFunc {
 		w.Write(resp)
 	}
 }
+
+// GetMetricHandler godoc
+// @Tags Info
+// @Summary Получение метрики по URL
+// @Description Принимает URL с полями id и type, возвращает структуру метрики с полями ID, Type, Value.
+// @Accept plain
+// @Produce plain
+// @Param id path string true "ID метрики"
+// @Param type path string true "Тип метрики"
+// @Success 200 {object} models.Metrics "Метрика"
+// @Failure 400 {string} string "Bad Request"
+// @Failure 404 {string} string "Not Found"
+// @Router /value/ID/type [get]
 func (h Handler) GetMetricHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "text/plain; charset=utf-8")
 		pathSplit := strings.Split(r.URL.Path, "/")
 		if len(pathSplit) != 4 {
-			w.WriteHeader(http.StatusNotFound)
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		metrics, err := h.Handler.GetMetric(pathSplit)
@@ -67,6 +91,14 @@ func (h Handler) GetMetricHandler() http.HandlerFunc {
 	}
 }
 
+// GetAllMetricsHandler godoc
+// @Tags Info
+// @Summary Получение всех метрик
+// @Description Возвращает все метрики в формате HTML.
+// @Produce html
+// @Success 200 {string} string "Все метрики"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router / [get]
 func (h Handler) GetAllMetricsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "text/html")
@@ -90,12 +122,20 @@ func (h Handler) GetAllMetricsHandler() http.HandlerFunc {
 	}
 }
 
+// PingHandler godoc
+// @Tags Info
+// @Summary Проверка соединения с базой данных
+// @Description Проверяет соединение с базой данных.
+// @Produce plain
+// @Success 200 {string} string "OK"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /ping [get]
 func (h Handler) PingHandler(log *zap.SugaredLogger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "text/plain")
 		err := h.PostgreHandler.CheckConnection()
 		if err != nil {
-			log.Error("status cod: ", http.StatusInternalServerError, "ping postgreDB failed")
+			log.Info("status cod: ", http.StatusInternalServerError, "ping postgreDB failed")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

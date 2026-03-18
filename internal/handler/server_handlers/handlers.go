@@ -16,6 +16,8 @@ type PostgreService interface {
 	CheckConnection() error
 }
 
+// Handler обрабатывает HTTP запросы для работы с метриками
+// Работает с логикой сервиса и отдельной логикой для PostgreService
 type Handler struct {
 	Handler        Service
 	PostgreHandler PostgreService

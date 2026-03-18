@@ -16,9 +16,12 @@ import (
 	"github.com/maliven1/metrics/internal/router"
 	"github.com/maliven1/metrics/internal/service"
 	"github.com/maliven1/metrics/internal/storage"
+
+	_ "net/http/pprof"
 )
 
 func Run() {
+
 	cfg := config.NewEnvServerConfig()
 	log, err := logger.Initialize()
 	if err != nil {
@@ -60,6 +63,11 @@ func Run() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("listen: %s\n", err)
 		}
+	}()
+
+	// listen on localhost:6060 for pprof
+	go func() {
+		http.ListenAndServe("localhost:6060", nil)
 	}()
 
 	quit := make(chan os.Signal, 1)

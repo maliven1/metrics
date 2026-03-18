@@ -27,10 +27,24 @@ type Agent interface {
 type SendClient struct {
 	AddHandler Agent
 	cfg        *config.AgentConfig
+	Client     *http.Client
 }
 
 func NewSendClient(s Agent, cfg *config.AgentConfig) *SendClient {
-	return &SendClient{AddHandler: s, cfg: cfg}
+	return &SendClient{
+		AddHandler: s,
+		cfg:        cfg,
+		Client:     &http.Client{},
+	}
+}
+
+// NewSendClientWithHTTPClient creates a new SendClient with a custom HTTP client
+func NewSendClientWithHTTPClient(s Agent, cfg *config.AgentConfig, client *http.Client) *SendClient {
+	return &SendClient{
+		AddHandler: s,
+		cfg:        cfg,
+		Client:     client,
+	}
 }
 
 // Semaphore структура семафора
@@ -57,7 +71,6 @@ func (s *Semaphore) Release() {
 
 func (s SendClient) SendClientMetrics() {
 	endpoint := "http://" + s.cfg.Address + "/update/"
-	client := &http.Client{}
 
 	go s.AddHandler.CollectMetrics()
 	for {
@@ -80,7 +93,7 @@ func (s SendClient) SendClientMetrics() {
 			request.Header.Set("HashSHA256", hash)
 			request.Header.Set("Content-Type", "Content-Type: text/plain")
 
-			response, err := client.Do(request)
+			response, err := s.Client.Do(request)
 			if err != nil {
 				log.Println(err)
 				continue
@@ -104,7 +117,7 @@ func (s SendClient) SendClientMetrics() {
 			request.Header.Set("HashSHA256", hash)
 			request.Header.Set("Content-Type", "Content-Type: text/plain")
 
-			response, err := client.Do(request)
+			response, err := s.Client.Do(request)
 			if err != nil {
 				log.Println(err)
 				continue
@@ -121,7 +134,6 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg *sync.Wait
 	defer wg.Done()
 	endpoint := "http://" + s.cfg.Address + "/updates/"
 	log.Info("start agent on endpoint: ", endpoint)
-	client := &http.Client{}
 
 	go s.AddHandler.CollectMetrics()
 	var w sync.WaitGroup
@@ -190,7 +202,7 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg *sync.Wait
 						request.Header.Set("Content-Encoding", "gzip")
 						request.Header.Set("Accept-Encoding", "gzip")
 
-						response, err := client.Do(request)
+						response, err := s.Client.Do(request)
 						if err != nil {
 							log.Info(err)
 							return err
@@ -221,7 +233,6 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg *sync.WaitG
 
 	endpoint := "http://" + s.cfg.Address + "/update/"
 	log.Info("start agent on endpoint: ", endpoint)
-	client := &http.Client{}
 
 	defer wg.Done()
 	var w sync.WaitGroup
@@ -279,7 +290,7 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg *sync.WaitG
 						request.Header.Set("content-type", "application/json")
 						request.Header.Set("Content-Encoding", "gzip")
 						request.Header.Set("Accept-Encoding", "gzip")
-						response, err := client.Do(request)
+						response, err := s.Client.Do(request)
 						if err != nil {
 							log.Info(err)
 							return err
@@ -334,7 +345,7 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg *sync.WaitG
 						request.Header.Set("Content-Encoding", "gzip")
 						request.Header.Set("Accept-Encoding", "gzip")
 
-						response, err := client.Do(request)
+						response, err := s.Client.Do(request)
 						if err != nil {
 							log.Info(err)
 							return err

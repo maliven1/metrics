@@ -324,3 +324,234 @@ func TestMemService_GetMetric(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkMemService_AddStructMetric_Gauge(b *testing.B) {
+	ctrl := gomock.NewController(b)
+	defer ctrl.Finish()
+
+	m := mock_service.NewMockMemRepo(ctrl)
+	s := NewService(m)
+
+	metric := models.Metrics{
+		ID:    "TestGauge",
+		MType: models.Gauge,
+		Value: func() *float64 { v := 123.45; return &v }(),
+	}
+
+	m.EXPECT().SetGauge("TestGauge", 123.45).AnyTimes()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s.AddStructMetric(metric)
+	}
+}
+
+func BenchmarkMemService_AddStructMetric_Counter(b *testing.B) {
+	ctrl := gomock.NewController(b)
+	defer ctrl.Finish()
+
+	m := mock_service.NewMockMemRepo(ctrl)
+	s := NewService(m)
+
+	metric := models.Metrics{
+		ID:    "TestCounter",
+		MType: models.Counter,
+		Delta: func() *int64 { v := int64(123); return &v }(),
+	}
+
+	m.EXPECT().AddCounter("TestCounter", int64(123)).Return(true).AnyTimes()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s.AddStructMetric(metric)
+	}
+}
+
+func BenchmarkMemService_GetStructMetric_Gauge(b *testing.B) {
+	ctrl := gomock.NewController(b)
+	defer ctrl.Finish()
+
+	m := mock_service.NewMockMemRepo(ctrl)
+	s := NewService(m)
+
+	metric := models.Metrics{
+		ID:    "TestGauge",
+		MType: models.Gauge,
+	}
+
+	m.EXPECT().CheckItemGauge("TestGauge").Return(true).AnyTimes()
+	m.EXPECT().GetItemGauge("TestGauge").Return("TestGauge", 123.45).AnyTimes()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s.GetStructMetric(metric)
+	}
+}
+
+func BenchmarkMemService_GetStructMetric_Counter(b *testing.B) {
+	ctrl := gomock.NewController(b)
+	defer ctrl.Finish()
+
+	m := mock_service.NewMockMemRepo(ctrl)
+	s := NewService(m)
+
+	metric := models.Metrics{
+		ID:    "TestCounter",
+		MType: models.Counter,
+	}
+
+	m.EXPECT().CheckCounter("TestCounter").Return(true).AnyTimes()
+	m.EXPECT().GetItemCounter("TestCounter").Return("TestCounter", int64(123)).AnyTimes()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s.GetStructMetric(metric)
+	}
+}
+
+func BenchmarkMemService_CheckAddPath_Gauge(b *testing.B) {
+	ctrl := gomock.NewController(b)
+	defer ctrl.Finish()
+
+	m := mock_service.NewMockMemRepo(ctrl)
+	s := NewService(m)
+
+	pathSplit := []string{"localhost:8080", "update", models.Gauge, "TestGauge", "123.45"}
+
+	m.EXPECT().SetGauge("TestGauge", 123.45).AnyTimes()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s.CheckAddPath(pathSplit)
+	}
+}
+
+func BenchmarkMemService_CheckAddPath_Counter(b *testing.B) {
+	ctrl := gomock.NewController(b)
+	defer ctrl.Finish()
+
+	m := mock_service.NewMockMemRepo(ctrl)
+	s := NewService(m)
+
+	pathSplit := []string{"localhost:8080", "update", models.Counter, "TestCounter", "123"}
+
+	m.EXPECT().AddCounter("TestCounter", int64(123)).Return(true).AnyTimes()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s.CheckAddPath(pathSplit)
+	}
+}
+
+func BenchmarkMemService_GetMetric_Gauge(b *testing.B) {
+	ctrl := gomock.NewController(b)
+	defer ctrl.Finish()
+
+	m := mock_service.NewMockMemRepo(ctrl)
+	s := NewService(m)
+
+	pathSplit := []string{"localhost:8080", "value", models.Gauge, "TestGauge"}
+
+	m.EXPECT().CheckItemGauge("TestGauge").Return(true).AnyTimes()
+	m.EXPECT().GetItemGauge("TestGauge").Return("TestGauge", 123.45).AnyTimes()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s.GetMetric(pathSplit)
+	}
+}
+
+func BenchmarkMemService_GetMetric_Counter(b *testing.B) {
+	ctrl := gomock.NewController(b)
+	defer ctrl.Finish()
+
+	m := mock_service.NewMockMemRepo(ctrl)
+	s := NewService(m)
+
+	pathSplit := []string{"localhost:8080", "value", models.Counter, "TestCounter"}
+
+	m.EXPECT().CheckCounter("TestCounter").Return(true).AnyTimes()
+	m.EXPECT().GetItemCounter("TestCounter").Return("TestCounter", int64(123)).AnyTimes()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s.GetMetric(pathSplit)
+	}
+}
+
+func BenchmarkMemService_GetAllMetrics(b *testing.B) {
+	ctrl := gomock.NewController(b)
+	defer ctrl.Finish()
+
+	m := mock_service.NewMockMemRepo(ctrl)
+	s := NewService(m)
+
+	counterMap := map[string]int64{"counter1": 123, "counter2": 456}
+	gaugeMap := map[string]float64{"gauge1": 123.45, "gauge2": 678.90}
+
+	m.EXPECT().GetCounter().Return(counterMap).AnyTimes()
+	m.EXPECT().GetGauge().Return(gaugeMap).AnyTimes()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s.GetAllMetrics()
+	}
+}
+
+func BenchmarkMemService_SetMetrics_Gauge(b *testing.B) {
+	ctrl := gomock.NewController(b)
+	defer ctrl.Finish()
+
+	m := mock_service.NewMockMemRepo(ctrl)
+	s := NewService(m)
+
+	metrics := []models.Metrics{
+		{
+			ID:    "TestGauge1",
+			MType: models.Gauge,
+			Value: func() *float64 { v := 123.45; return &v }(),
+		},
+		{
+			ID:    "TestGauge2",
+			MType: models.Gauge,
+			Value: func() *float64 { v := 678.90; return &v }(),
+		},
+	}
+
+	m.EXPECT().SetGauge("TestGauge1", 123.45).AnyTimes()
+	m.EXPECT().SetGauge("TestGauge2", 678.90).AnyTimes()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s.SetMetrics(metrics)
+	}
+}
+
+func BenchmarkMemService_SetMetrics_Counter(b *testing.B) {
+	ctrl := gomock.NewController(b)
+	defer ctrl.Finish()
+
+	m := mock_service.NewMockMemRepo(ctrl)
+	s := NewService(m)
+
+	metrics := []models.Metrics{
+		{
+			ID:    "TestCounter1",
+			MType: models.Counter,
+			Delta: func() *int64 { v := int64(123); return &v }(),
+		},
+		{
+			ID:    "TestCounter2",
+			MType: models.Counter,
+			Delta: func() *int64 { v := int64(456); return &v }(),
+		},
+	}
+
+	m.EXPECT().AddCounter("TestCounter1", int64(123)).Return(true).AnyTimes()
+	m.EXPECT().AddCounter("TestCounter2", int64(456)).Return(true).AnyTimes()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s.SetMetrics(metrics)
+	}
+}

@@ -71,7 +71,7 @@ func AuditMiddleware(log *zap.SugaredLogger, cfg config.ServerConfig) func(next 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-			if cfg.AuditFilePath == "" || cfg.AuditURL == "" {
+			if cfg.AuditFilePath == "" && cfg.AuditURL == "" {
 
 				next.ServeHTTP(w, r)
 				return
@@ -121,9 +121,9 @@ func AuditMiddleware(log *zap.SugaredLogger, cfg config.ServerConfig) func(next 
 
 			go func() {
 				for _, receiver := range auditReceivers {
-					log.Info("Sending audit to %T", receiver)
+					log.Debug("Sending audit to %T", receiver)
 					if err := receiver.Notify(event); err != nil {
-						log.Info("Error while sending audit: %v", err)
+						log.Debug("Error while sending audit: %v", err)
 					}
 				}
 			}()
