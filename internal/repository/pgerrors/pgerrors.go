@@ -1,3 +1,4 @@
+// Package pgerrors
 package pgerrors
 
 import (

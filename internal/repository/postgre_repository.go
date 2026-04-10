@@ -1,3 +1,4 @@
+// Package repository
 package repository
 
 import (
@@ -69,13 +70,13 @@ func (s *Storage) SetCounter(key string, value int64, ctx context.Context) error
 
 }
 
-func (s *Storage) GetAllGauges() (map[string]float64, error) {
+func (s *Storage) GetAllGauges(ctx context.Context) (map[string]float64, error) {
 	var delay = time.Second           // Начальная задержка
 	const increment = 2 * time.Second // Увеличение задержки на 2 секунды после каждой попытки
 	m := make(map[string]float64)
 	err := retry.Do(func() error {
 		var err error
-		m, err = s.postgre.GetAllGauges()
+		m, err = s.postgre.GetAllGauges(ctx)
 		return err
 	}, retry.Attempts(3), retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
 		if n > 0 {

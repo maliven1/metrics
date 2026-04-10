@@ -1,3 +1,4 @@
+// Package main
 package main
 
 import (
@@ -15,7 +16,23 @@ import (
 	_ "net/http/pprof"
 )
 
+var (
+	buildVersion string
+	buildDate    string
+	buildCommit  string
+)
+
+func defaultIfEmpty(s string) string {
+	if s == "" {
+		return "N/A"
+	}
+	return s
+}
+
 func main() {
+	fmt.Printf("Build version: %s\n", defaultIfEmpty(buildVersion))
+	fmt.Printf("Build date: %s\n", defaultIfEmpty(buildDate))
+	fmt.Printf("Build commit: %s\n", defaultIfEmpty(buildCommit))
 	log, err := logger.Initialize()
 	if err != nil {
 		fmt.Println(err)
@@ -31,7 +48,7 @@ func main() {
 	client := agenthandlers.NewSendClient(service, cfg)
 
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(3)
 	go client.SendClientJSONMetrics(log, &wg)
 	go client.SendClientBatchMetrics(log, &wg)
 	go func() {

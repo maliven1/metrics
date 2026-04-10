@@ -1,3 +1,4 @@
+// Package storage
 package storage
 
 import (
@@ -133,7 +134,8 @@ func UpMigrations(db *sql.DB, log *zap.SugaredLogger) error {
 		return err
 	}
 
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+	err = m.Up()
+	if err != nil && err != migrate.ErrNoChange {
 		log.Error("Failed to apply migrations", err)
 		return err
 	}
@@ -146,10 +148,10 @@ func UpMigrations(db *sql.DB, log *zap.SugaredLogger) error {
 	return nil
 }
 
-func (db *PostgreDB) GetAllGauges() (map[string]float64, error) {
+func (db *PostgreDB) GetAllGauges(ctx context.Context) (map[string]float64, error) {
 	gauges := make(map[string]float64)
 
-	rows, err := db.DB.Query("SELECT gauge, gauge_value FROM metrics WHERE gauge IS NOT NULL AND gauge != ''")
+	rows, err := db.DB.QueryContext(ctx, "SELECT gauge, gauge_value FROM metrics WHERE gauge IS NOT NULL AND gauge != ''")
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +160,7 @@ func (db *PostgreDB) GetAllGauges() (map[string]float64, error) {
 	for rows.Next() {
 		var key string
 		var value float64
-		err := rows.Scan(&key, &value)
+		err = rows.Scan(&key, &value)
 		if err != nil {
 			return nil, err
 		}
@@ -184,7 +186,7 @@ func (db *PostgreDB) GetAllCounters() (map[string]int64, error) {
 	for rows.Next() {
 		var key string
 		var value int64
-		err := rows.Scan(&key, &value)
+		err = rows.Scan(&key, &value)
 		if err != nil {
 			return nil, err
 		}

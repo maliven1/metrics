@@ -1,3 +1,4 @@
+// Package service
 package service
 
 import (
@@ -9,7 +10,7 @@ type PostgreRepo interface {
 	CheckConnection() error
 	SetGauge(key string, value float64, ctx context.Context) error
 	SetCounter(key string, value int64, ctx context.Context) error
-	GetAllGauges() (map[string]float64, error)
+	GetAllGauges(ctx context.Context) (map[string]float64, error)
 	GetAllCounters() (map[string]int64, error)
 }
 type PostgreService struct {
