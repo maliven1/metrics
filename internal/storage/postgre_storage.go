@@ -148,10 +148,10 @@ func UpMigrations(db *sql.DB, log *zap.SugaredLogger) error {
 	return nil
 }
 
-func (db *PostgreDB) GetAllGauges() (map[string]float64, error) {
+func (db *PostgreDB) GetAllGauges(ctx context.Context) (map[string]float64, error) {
 	gauges := make(map[string]float64)
 
-	rows, err := db.DB.Query("SELECT gauge, gauge_value FROM metrics WHERE gauge IS NOT NULL AND gauge != ''")
+	rows, err := db.DB.QueryContext(ctx, "SELECT gauge, gauge_value FROM metrics WHERE gauge IS NOT NULL AND gauge != ''")
 	if err != nil {
 		return nil, err
 	}

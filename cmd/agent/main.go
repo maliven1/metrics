@@ -48,7 +48,7 @@ func main() {
 	client := agenthandlers.NewSendClient(service, cfg)
 
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(3)
 	go client.SendClientJSONMetrics(log, &wg)
 	go client.SendClientBatchMetrics(log, &wg)
 	go func() {

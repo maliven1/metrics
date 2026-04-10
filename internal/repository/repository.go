@@ -19,7 +19,7 @@ type Postgre interface {
 	CheckConnection() error
 	SetGauge(key string, value float64, ctx context.Context) error
 	SetCounter(key string, value int64, ctx context.Context) error
-	GetAllGauges() (map[string]float64, error)
+	GetAllGauges(ctx context.Context) (map[string]float64, error)
 	GetAllCounters() (map[string]int64, error)
 	GetItemGauge(key string) (string, float64, error)
 	GetItemCounter(key string) (string, int64, error)
