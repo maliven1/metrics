@@ -28,7 +28,7 @@ func MakeHash(value string, key string) string {
 	return fmt.Sprintf("%x", dst)
 }
 
-func MakeHttpsKey() {
+func MakeHTTPSKey() {
 	// создаём шаблон сертификата
 	cert := &x509.Certificate{
 		// указываем уникальный номер сертификата

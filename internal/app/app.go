@@ -23,7 +23,7 @@ import (
 )
 
 func Run() {
-	crypto.MakeHttpsKey()
+	crypto.MakeHTTPSKey()
 	cfg := config.NewEnvServerConfig()
 	log, err := logger.Initialize()
 	if err != nil {
