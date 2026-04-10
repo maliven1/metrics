@@ -126,6 +126,7 @@ func AuditMiddleware(log *zap.SugaredLogger, cfg config.ServerConfig) func(next 
 			go func() {
 				for _, receiver := range auditReceivers {
 					if err := receiver.Notify(event); err != nil {
+						log.Warnf("Failed to send audit event: %v", err)
 					}
 				}
 			}()

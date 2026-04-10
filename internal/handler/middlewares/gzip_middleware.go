@@ -60,11 +60,7 @@ func GzipMiddleware(log *zap.SugaredLogger) func(http.Handler) http.Handler {
 						defer cr.Close()
 					}
 				} else {
-					// Safely get first 8 bytes or fewer
-					firstBytes := bodyBytes
-					if len(firstBytes) > 8 {
-						firstBytes = firstBytes[:8]
-					}
+					// Safely get first 8 bytes or fewer (for potential future checks)
 					// Оставляем тело как есть (вероятно, это уже распакованные данные)
 				}
 			}

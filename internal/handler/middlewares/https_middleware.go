@@ -37,15 +37,15 @@ func DecryptedMessage(cfg config.ServerConfig, log *zap.SugaredLogger) func(http
 			defer r.Body.Close()
 
 			// Восстанавливаем тело запроса на случай, если не будем дешифровать
-			restoreBody := func() {
-				r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
-			}
-			defer restoreBody()
+			shouldRestore := true
+			defer func() {
+				if shouldRestore {
+					r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+				}
+			}()
 
 			// Проверяем, что данные не пустые
 			if len(bodyBytes) == 0 {
-				// Восстанавливаем тело запроса перед передачей следующему middleware
-				restoreBody()
 				h.ServeHTTP(ow, r)
 				return
 			}
@@ -54,10 +54,7 @@ func DecryptedMessage(cfg config.ServerConfig, log *zap.SugaredLogger) func(http
 			keySize := secretKey.Size()
 			if len(bodyBytes) != keySize {
 				// Проверяем, может быть это уже JSON (начинается с {)
-				if len(bodyBytes) > 0 && bodyBytes[0] == '{' {
-				}
-				// Восстанавливаем тело запроса перед передачей следующему middleware
-				restoreBody()
+				// Если это JSON, пропускаем дешифровку
 				h.ServeHTTP(ow, r)
 				return
 			}
@@ -72,7 +69,7 @@ func DecryptedMessage(cfg config.ServerConfig, log *zap.SugaredLogger) func(http
 			// Заменяем тело запроса на расшифрованные данные
 			r.Body = io.NopCloser(bytes.NewReader(decryptedMessage))
 			// Отменяем восстановление оригинального тела
-			restoreBody = func() {}
+			shouldRestore = false
 
 			h.ServeHTTP(ow, r)
 		})
