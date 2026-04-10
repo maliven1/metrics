@@ -87,7 +87,6 @@ func ExampleHandler_PostMetricsHandler() {
 
 	// Check status code before processing response
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("Unexpected status code: %d", resp.StatusCode)
 		return
 	}
 
@@ -124,7 +123,6 @@ func ExampleHandler_GetAllMetricsHandler() {
 
 	// Check status code before processing response
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("Unexpected status code: %d", resp.StatusCode)
 		return
 	}
 
@@ -172,7 +170,6 @@ func ExampleHandler_PostBodyHandler() {
 
 	// Check status code before processing response
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("Unexpected status code: %d", resp.StatusCode)
 		return
 	}
 
@@ -212,7 +209,6 @@ func ExampleHandler_PostURLHandler() {
 
 	// Check status code before processing response
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("Unexpected status code: %d", resp.StatusCode)
 		return
 	}
 
@@ -276,7 +272,6 @@ func ExampleHandler_GetBodyMetricHandler() {
 
 	// Check status code before processing response
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("Unexpected status code: %d", resp.StatusCode)
 		return
 	}
 
@@ -330,7 +325,6 @@ func ExampleHandler_GetMetricHandler() {
 
 	// Check status code before processing response
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("Unexpected status code: %d", resp.StatusCode)
 		return
 	}
 
@@ -366,7 +360,6 @@ func ExampleHandler_PingHandler() {
 
 	// Check status code before processing response
 	if resp.StatusCode != http.StatusInternalServerError {
-		log.Printf("Unexpected status code: %d", resp.StatusCode)
 		return
 	}
 

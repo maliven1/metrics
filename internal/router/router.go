@@ -17,11 +17,13 @@ func NewRouter(r *chi.Mux, handler *serverhandlers.Handler, log *zap.SugaredLogg
 		r.Use(func(h http.Handler) http.Handler {
 			return logger.WithLogging(h, log)
 		})
+		r.Use(middlewares.DecryptedMessage(cfg, log))
 		r.Group(func(r chi.Router) {
 
 			r.Use(middlewares.GzipMiddleware(log))
 
 			r.Get(`/`, handler.GetAllMetricsHandler())
+
 			r.Group(func(r chi.Router) {
 				r.Use(middlewares.AuditMiddleware(log, cfg))
 

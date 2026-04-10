@@ -9,20 +9,21 @@ import (
 	"syscall"
 	"time"
 
+	_ "net/http/pprof"
+
 	"github.com/go-chi/chi"
 	"github.com/maliven1/metrics/internal/config"
+	crypto "github.com/maliven1/metrics/internal/crypto"
 	serverhandlers "github.com/maliven1/metrics/internal/handler/server_handlers"
 	"github.com/maliven1/metrics/internal/logger"
 	"github.com/maliven1/metrics/internal/repository"
 	"github.com/maliven1/metrics/internal/router"
 	"github.com/maliven1/metrics/internal/service"
 	"github.com/maliven1/metrics/internal/storage"
-
-	_ "net/http/pprof"
 )
 
 func Run() {
-
+	crypto.MakeHTTPSKey()
 	cfg := config.NewEnvServerConfig()
 	log, err := logger.Initialize()
 	if err != nil {
