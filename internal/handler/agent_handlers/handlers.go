@@ -4,6 +4,8 @@ package agenthandlers
 import (
 	"bytes"
 	"compress/gzip"
+	"crypto/rand"
+	"crypto/rsa"
 
 	"encoding/json"
 	"fmt"
@@ -14,6 +16,7 @@ import (
 	"time"
 
 	"github.com/avast/retry-go"
+	"github.com/maliven1/metrics/internal/agent"
 	"github.com/maliven1/metrics/internal/config"
 	crypto "github.com/maliven1/metrics/internal/crypto"
 	models "github.com/maliven1/metrics/internal/model"
@@ -136,6 +139,7 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg *sync.Wait
 	endpoint := "http://" + s.cfg.Address + "/updates/"
 	log.Info("start agent on endpoint: ", endpoint)
 
+	certificate := agent.ReadKey(s.cfg)
 	go s.AddHandler.CollectMetrics()
 	var w sync.WaitGroup
 	w.Add(s.cfg.RateLimit)
@@ -190,8 +194,11 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg *sync.Wait
 							log.Error("Failed to close gzip writer: ", err)
 							return nil
 						}
-
-						request, err := http.NewRequest(http.MethodPost, endpoint, &buf)
+						encryptedMessage, err := rsa.EncryptPKCS1v15(rand.Reader, certificate.PublicKey.(*rsa.PublicKey), buf.Bytes())
+						if err != nil {
+							log.Fatal(err)
+						}
+						request, err := http.NewRequest(http.MethodPost, endpoint, bytes.NewReader(encryptedMessage))
 						if err != nil {
 							log.Error("Failed to create request: ", err)
 							return nil
@@ -231,7 +238,7 @@ func (s SendClient) SendClientBatchMetrics(log *zap.SugaredLogger, wg *sync.Wait
 func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg *sync.WaitGroup) {
 	var delay = time.Second           // Начальная задержка
 	const increment = 2 * time.Second // Увеличение задержки на 2 секунды после каждой попытки
-
+	certificate := agent.ReadKey(s.cfg)
 	endpoint := "http://" + s.cfg.Address + "/update/"
 	log.Info("start agent on endpoint: ", endpoint)
 
@@ -279,8 +286,11 @@ func (s SendClient) SendClientJSONMetrics(log *zap.SugaredLogger, wg *sync.WaitG
 							log.Error("Buffer is empty")
 							break
 						}
-
-						request, err := http.NewRequest(http.MethodPost, endpoint, &buf)
+						encryptedMessage, err := rsa.EncryptPKCS1v15(rand.Reader, certificate.PublicKey.(*rsa.PublicKey), buf.Bytes())
+						if err != nil {
+							log.Fatal(err)
+						}
+						request, err := http.NewRequest(http.MethodPost, endpoint, bytes.NewReader(encryptedMessage))
 						if err != nil {
 							log.Info(err)
 						}

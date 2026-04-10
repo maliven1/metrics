@@ -2,6 +2,7 @@
 package middlewares
 
 import (
+	"bytes"
 	"compress/gzip"
 	"io"
 	"net/http"
@@ -33,16 +34,39 @@ func GzipMiddleware(log *zap.SugaredLogger) func(http.Handler) http.Handler {
 			contentEncoding := r.Header.Get("Content-Encoding")
 			sendsGzip := strings.Contains(contentEncoding, "gzip")
 			if sendsGzip {
-				// оборачиваем тело запроса в io.Reader с поддержкой декомпрессии
-				cr, err := NewCompressReader(r.Body)
+				// Читаем всё тело запроса в буфер, чтобы проверить, является ли оно gzip
+				bodyBytes, err := io.ReadAll(r.Body)
 				if err != nil {
-					w.WriteHeader(http.StatusInternalServerError)
-					log.Error(http.StatusInternalServerError)
+					log.Warnf("Failed to read request body: %v", err)
+					w.WriteHeader(http.StatusBadRequest)
 					return
 				}
-				// меняем тело запроса на новое
-				r.Body = cr
-				defer cr.Close()
+				// Восстанавливаем тело запроса из буфера
+				r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+
+				// Проверяем, является ли тело валидным gzip (проверяем magic number)
+				isGzip := len(bodyBytes) >= 2 && bodyBytes[0] == 0x1f && bodyBytes[1] == 0x8b
+
+				if isGzip {
+					// Создаём gzip reader из буфера
+					cr, err := NewCompressReader(io.NopCloser(bytes.NewReader(bodyBytes)))
+					if err != nil {
+						log.Warnf("Failed to create gzip reader for valid gzip data: %v. Skipping decompression.", err)
+						// Оставляем тело как есть (raw gzip данные)
+						// Хендлер должен будет разобраться с этим
+					} else {
+						// меняем тело запроса на новое
+						r.Body = cr
+						defer cr.Close()
+					}
+				} else {
+					// Safely get first 8 bytes or fewer
+					firstBytes := bodyBytes
+					if len(firstBytes) > 8 {
+						firstBytes = firstBytes[:8]
+					}
+					// Оставляем тело как есть (вероятно, это уже распакованные данные)
+				}
 			}
 
 			// передаём управление хендлеру

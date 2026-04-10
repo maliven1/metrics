@@ -2,8 +2,11 @@
 package agent
 
 import (
+	"crypto/x509"
+	"encoding/pem"
 	"log"
 	"math/rand"
+	"os"
 	"runtime"
 	"sync"
 	"time"
@@ -111,4 +114,24 @@ func (a Agent) addMetrics() {
 		return
 	}
 	a.memStorage.SetCounter(models.PollCount, count)
+}
+
+func ReadKey(cfg *config.AgentConfig) *x509.Certificate {
+
+	certificateBytes, err := os.ReadFile(cfg.PublicCryptoKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	certificatePemBlock, _ := pem.Decode(certificateBytes)
+	if certificatePemBlock == nil {
+		log.Fatal("certificate not found")
+	}
+
+	certificate, err := x509.ParseCertificate(certificatePemBlock.Bytes)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return certificate
 }

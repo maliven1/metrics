@@ -20,6 +20,8 @@ var (
 	rateLimit         int
 	auditFilePath     string
 	auditURL          string
+	publicCryptoKey   string
+	secretCryptoKey   string
 )
 
 type AgentConfig struct {
@@ -27,9 +29,10 @@ type AgentConfig struct {
 	//ReportInterval частота отправки метрик на сервер
 	ReportInterval int `env:"REPORT_INTERVAL"`
 	//PollInterval частота опроса метрик
-	PollInterval int    `env:"POLL_INTERVAL"`
-	Key          string `env:"KEY"`
-	RateLimit    int    `env:"RATE_LIMIT"`
+	PollInterval    int    `env:"POLL_INTERVAL"`
+	Key             string `env:"KEY"`
+	RateLimit       int    `env:"RATE_LIMIT"`
+	PublicCryptoKey string `env:"CRYPTO_KEY"` // публичный ключ для шифрования метрик
 }
 
 type ServerConfig struct {
@@ -37,11 +40,13 @@ type ServerConfig struct {
 	StoreInterval   int    `env:"STORE_INTERVAL"`
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 	//Restore нужно ли подгружать ранее сохраненные метрики в файле
-	Restore       bool   `env:"RESTORE"`
-	PostgreDSN    string `env:"DATABASE_DSN"`
-	Key           string `env:"KEY"`
-	AuditFilePath string `env:"AUDIT_FILE_PATH"`
-	AuditURL      string `env:"AUDIT_URL"`
+	Restore         bool   `env:"RESTORE"`
+	PostgreDSN      string `env:"DATABASE_DSN"`
+	Key             string `env:"KEY"`
+	AuditFilePath   string `env:"AUDIT_FILE_PATH"`
+	AuditURL        string `env:"AUDIT_URL"`
+	SecretCryptoKey string `env:"CRYPTO_KEY"` // приватный ключ для шифрования метрик
+	PublicCryptoKey string `env:"CRYPTO_KEY"` // публичный ключ для шифрования метрик
 }
 
 func parseServerFlags() {
@@ -53,6 +58,8 @@ func parseServerFlags() {
 	flag.StringVar(&key, "k", "", "hash key")
 	flag.StringVar(&auditFilePath, "audit-file", "", "путь к файлу, в который сохраняются логи аудита")
 	flag.StringVar(&auditURL, "audit-url", "", "URL для отправки логов аудита")
+	flag.StringVar(&secretCryptoKey, "crypto-key", "crypto/private.pem", "приватный ключ для шифрования метрик")
+
 	flag.Parse()
 }
 func parseAgentFlags() {
@@ -61,6 +68,7 @@ func parseAgentFlags() {
 	flag.IntVar(&pollInterval, "p", 2, "metrics polling frequency")
 	flag.StringVar(&key, "k", "", "hash key")
 	flag.IntVar(&rateLimit, "l", 1, "max RateLimit on agent")
+	flag.StringVar(&publicCryptoKey, "crypto-key", "crypto/cert.pem", "публичный ключ для шифрования метрик")
 	flag.Parse()
 
 }
@@ -94,6 +102,12 @@ func NewEnvServerConfig() *ServerConfig {
 	if cfg.AuditURL == "" {
 		cfg.AuditURL = auditURL
 	}
+	if cfg.SecretCryptoKey == "" {
+		cfg.SecretCryptoKey = secretCryptoKey
+	}
+	if cfg.PublicCryptoKey == "" {
+		cfg.PublicCryptoKey = publicCryptoKey
+	}
 	return &cfg
 
 }
@@ -120,6 +134,9 @@ func NewEnvAgentConfig() *AgentConfig {
 	}
 	if cfg.RateLimit == 0 {
 		cfg.RateLimit = rateLimit
+	}
+	if cfg.PublicCryptoKey == "" {
+		cfg.PublicCryptoKey = publicCryptoKey
 	}
 	return &cfg
 }
